@@ -1,0 +1,18 @@
+# Jarvis IA - Requirements
+# Dependências principais do projeto
+
+# Reconhecimento e síntese de voz
+edge-tts==6.1.18
+SpeechRecognition==3.10.4
+
+# Interface e automação
+pygame==2.6.2
+keyboard==0.13.5
+pyautogui==0.9.54
+
+# Inteligência Artificial
+google-genai==1.73.1
+
+# Utilitários do sistema
+requests==2.33.1
+asyncio
