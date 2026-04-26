@@ -9,7 +9,7 @@ from typing import Dict, Any
 SETTINGS: Dict[str, Any] = {
     # Configurações de áudio
     "audio": {
-        "microphone_index": 3,  # Índice do microfone padrão
+        "microphone_index": 1,  # Índice do microfone padrão
         "language": "pt-BR",    # Idioma para reconhecimento
         "voice": "pt-BR-AntonioNeural",  # Voz para síntese
         "volume_steps": 5,      # Passos para controle de volume
