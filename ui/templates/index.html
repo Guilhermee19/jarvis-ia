@@ -3,314 +3,336 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jarvis</title>
+    <title>J.A.R.V.I.S</title>
     <style>
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #0f1419 0%, #1a1d26 100%);
-        color: white;
+        background: #050c18;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100vh;
         overflow: hidden;
-        position: relative;
+        font-family: "Courier New", monospace;
       }
 
-      .jarvis-container {
+      .grid {
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 220, 255, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 220, 255, 0.045) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+      }
+      .grid::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 28%,
+          #050c18 78%
+        );
+      }
+
+      .scene {
+        position: relative;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 40px;
-        z-index: 10;
       }
 
-      .jarvis-logo {
+      canvas {
+        display: block;
         position: relative;
-        width: 200px;
-        height: 200px;
+        z-index: 2;
       }
 
-      .circle-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-      }
-
-      .circle-outer {
+      .time-block {
         position: absolute;
-        width: 100%;
-        height: 100%;
-        border: 2px solid rgba(59, 130, 246, 0.5);
-        border-radius: 50%;
-        animation: rotate 20s linear infinite;
+        top: -110px;
+        text-align: center;
+        z-index: 3;
+        pointer-events: none;
+      }
+      .time {
+        font-size: 52px;
+        font-weight: 200;
+        letter-spacing: 12px;
+        color: #00dcff;
+        text-shadow: 0 0 20px rgba(0, 220, 255, 0.4);
+      }
+      .date {
+        margin-top: 8px;
+        font-size: 9px;
+        letter-spacing: 5px;
+        color: rgba(0, 220, 255, 0.3);
       }
 
-      .circle-middle {
+      .bottom {
         position: absolute;
-        width: 85%;
-        height: 85%;
-        top: 7.5%;
-        left: 7.5%;
-        border: 2px solid rgba(59, 130, 246, 0.3);
-        border-radius: 50%;
-        animation: rotate 15s linear infinite reverse;
-      }
-
-      .circle-inner {
-        position: absolute;
-        width: 70%;
-        height: 70%;
-        top: 15%;
-        left: 15%;
-        background: radial-gradient(
-          circle,
-          rgba(59, 130, 246, 0.1) 0%,
-          transparent 70%
-        );
-        border-radius: 50%;
-        box-shadow:
-          0 0 40px rgba(59, 130, 246, 0.4),
-          inset 0 0 40px rgba(59, 130, 246, 0.2);
-      }
-
-      .jarvis-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 28px;
-        font-weight: 600;
-        letter-spacing: 8px;
-        color: #fff;
-        text-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
-        z-index: 20;
-      }
-
-      .particles {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-      }
-
-      .particle {
-        position: absolute;
-        width: 3px;
-        height: 3px;
-        background: rgba(59, 130, 246, 0.8);
-        border-radius: 50%;
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-        animation: float 3s ease-in-out infinite;
-      }
-
-      @keyframes rotate {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0) translateX(0);
-          opacity: 0.3;
-        }
-        50% {
-          transform: translateY(-20px) translateX(10px);
-          opacity: 1;
-        }
-      }
-
-      .datetime-display {
-        position: absolute;
-        top: 20px;
+        bottom: -80px;
         display: flex;
         flex-direction: column;
         align-items: center;
+        gap: 8px;
+        z-index: 3;
+        pointer-events: none;
+      }
+      .sys {
+        font-size: 8px;
+        letter-spacing: 5px;
+        color: rgba(0, 220, 255, 0.25);
       }
 
-      .time-display {
-        font-size: 60px;
-        font-weight: 500;
-        letter-spacing: 8px;
-        color: #fff;
-        text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-      }
-
-      .date-display {
-        font-size: 12px;
-        font-weight: 400;
-        letter-spacing: 4px;
-        color: rgba(255, 255, 255, 0.6);
-        text-transform: uppercase;
-        text-align: center;
-      }
-
-      /* Efeito de pulso no círculo */
-      .pulse {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border: 2px solid rgba(59, 130, 246, 0.6);
-        border-radius: 50%;
-        animation: pulse 2s ease-out infinite;
-      }
-
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
-          opacity: 1;
-        }
-        100% {
-          transform: scale(1.2);
-          opacity: 0;
-        }
-      }
-
-      /* Background stars effect */
-      .stars {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        z-index: 1;
-      }
-
-      .star {
-        position: absolute;
-        width: 2px;
-        height: 2px;
-        background: white;
-        border-radius: 50%;
-        animation: twinkle 3s ease-in-out infinite;
-      }
-
-      @keyframes twinkle {
-        0%,
-        100% {
-          opacity: 0.2;
-        }
-        50% {
-          opacity: 1;
-        }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.07) 2px,
+          rgba(0, 0, 0, 0.07) 3px
+        );
+        pointer-events: none;
+        z-index: 999;
       }
     </style>
   </head>
   <body>
-    <div class="stars" id="stars"></div>
+    <div class="grid"></div>
 
-    <div class="jarvis-container">
-      <div class="space-top"></div>
-
-      <div class="jarvis-logo">
-        <div class="circle-container">
-          <div class="pulse"></div>
-          <div class="circle-outer"></div>
-          <div class="circle-middle"></div>
-          <div class="circle-inner"></div>
-          <div class="particles" id="particles"></div>
-        </div>
-        <div class="jarvis-text">JARVIS</div>
+    <div class="scene">
+      <div class="time-block">
+        <div class="time" id="time">00:00</div>
+        <div class="date" id="date">···</div>
       </div>
 
-      <div class="datetime-display">
-        <div class="time-display" id="time">00:00</div>
-        <div class="date-display" id="date">LOADING...</div>
+      <canvas id="c" width="440" height="440"></canvas>
+
+      <div class="bottom">
+        <div class="sys" id="sys">ONLINE &middot; STANDBY</div>
       </div>
     </div>
 
     <script>
-      // Criar estrelas de fundo
-      function createStars() {
-        const starsContainer = document.getElementById("stars");
-        for (let i = 0; i < 50; i++) {
-          const star = document.createElement("div");
-          star.className = "star";
-          star.style.left = Math.random() * 100 + "%";
-          star.style.top = Math.random() * 100 + "%";
-          star.style.animationDelay = Math.random() * 3 + "s";
-          starsContainer.appendChild(star);
+      const cv = document.getElementById("c"),
+        ctx = cv.getContext("2d");
+      const W = 440,
+        CX = 220,
+        CY = 220;
+      const C = "rgba(0,220,255,1)";
+      const A = (a) => a * Math.PI * 2;
+
+      function glow(b, c) {
+        ctx.shadowColor = c || "#00dcff";
+        ctx.shadowBlur = b;
+      }
+      function ng() {
+        ctx.shadowBlur = 0;
+      }
+
+      function drawBg() {
+        ctx.clearRect(0, 0, W, W);
+        const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, 220);
+        g.addColorStop(0, "rgba(0,40,70,0.18)");
+        g.addColorStop(1, "transparent");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, W);
+      }
+
+      function ringOuter(t) {
+        ctx.setLineDash([2, 14]);
+        ctx.lineWidth = 0.6;
+        ctx.strokeStyle = "rgba(0,220,255,0.15)";
+        ng();
+        ctx.beginPath();
+        ctx.arc(CX, CY, 206, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        for (let i = 0; i < 4; i++) {
+          const a = A(i / 4) + t;
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "rgba(0,220,255,0.5)";
+          glow(6);
+          ctx.beginPath();
+          ctx.moveTo(CX + 197 * Math.cos(a), CY + 197 * Math.sin(a));
+          ctx.lineTo(CX + 218 * Math.cos(a), CY + 218 * Math.sin(a));
+          ctx.stroke();
+        }
+        ng();
+      }
+
+      function ringTicks(t) {
+        const r = 178;
+        for (let i = 0; i < 60; i++) {
+          const a = A(i / 60) + t;
+          const major = i % 15 === 0,
+            mid = i % 5 === 0;
+          const len = major ? 14 : mid ? 8 : 4;
+          ctx.lineWidth = major ? 1 : 0.5;
+          ctx.strokeStyle = major
+            ? "rgba(0,220,255,0.55)"
+            : mid
+              ? "rgba(0,220,255,0.25)"
+              : "rgba(0,220,255,0.1)";
+          ctx.beginPath();
+          ctx.moveTo(CX + r * Math.cos(a), CY + r * Math.sin(a));
+          ctx.lineTo(
+            CX + (r - len) * Math.cos(a),
+            CY + (r - len) * Math.sin(a),
+          );
+          ctx.stroke();
         }
       }
 
-      // Criar partículas
-      function createParticles() {
-        const particlesContainer = document.getElementById("particles");
-        for (let i = 0; i < 20; i++) {
-          const particle = document.createElement("div");
-          particle.className = "particle";
-          const angle = (Math.PI * 2 * i) / 20;
-          const radius = 40 + Math.random() * 40;
-          particle.style.left = 50 + Math.cos(angle) * radius + "%";
-          particle.style.top = 50 + Math.sin(angle) * radius + "%";
-          particle.style.animationDelay = Math.random() * 3 + "s";
-          particlesContainer.appendChild(particle);
-        }
+      function ringMain(t) {
+        const r = 148;
+        [
+          [28, 0.04],
+          [14, 0.1],
+          [5, 0.28],
+        ].forEach(([b, alpha]) => {
+          ctx.strokeStyle = `rgba(0,220,255,${alpha})`;
+          ctx.lineWidth = b / 4 + 2;
+          glow(b);
+          ctx.beginPath();
+          ctx.arc(CX, CY, r, t + 0.08, t + Math.PI * 2 - 0.08);
+          ctx.stroke();
+        });
+        ctx.strokeStyle = C;
+        ctx.lineWidth = 1.5;
+        glow(12);
+        ctx.beginPath();
+        ctx.arc(CX, CY, r, t + 0.08, t + Math.PI * 2 - 0.08);
+        ctx.stroke();
+        [-0.04, Math.PI * 2 + 0.04].forEach((offset) => {
+          const a = t + offset;
+          glow(18);
+          ctx.fillStyle = C;
+          ctx.beginPath();
+          ctx.arc(
+            CX + r * Math.cos(a),
+            CY + r * Math.sin(a),
+            3.5,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        });
+        ng();
       }
 
-      // Atualizar hora e data
-      function updateDateTime() {
-        const now = new Date();
+      function ringInner(t) {
+        const r = 108;
+        ctx.setLineDash([1, 10]);
+        ctx.strokeStyle = "rgba(0,220,255,0.12)";
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.arc(CX, CY, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        glow(10);
+        for (let i = 0; i < 8; i++) {
+          const a = A(i / 8) - t;
+          ctx.fillStyle =
+            i % 2 === 0 ? "rgba(0,220,255,0.7)" : "rgba(0,220,255,0.25)";
+          ctx.beginPath();
+          ctx.arc(
+            CX + r * Math.cos(a),
+            CY + r * Math.sin(a),
+            i % 2 === 0 ? 2 : 1.2,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+        ng();
+      }
 
-        // Formatar hora
-        const hours = String(now.getHours()).padStart(2, "0");
-        const minutes = String(now.getMinutes()).padStart(2, "0");
-        document.getElementById("time").textContent = `${hours}:${minutes}`;
+      function drawCenter() {
+        ctx.beginPath();
+        ctx.arc(CX, CY, 80, 0, Math.PI * 2);
+        ctx.fillStyle = "#050c18";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,220,255,0.12)";
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        ctx.font = '500 11px "Courier New"';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        glow(14);
+        ctx.fillStyle = C;
+        ctx.fillText("J.A.R.V.I.S", CX, CY);
+        ng();
+        const p = 0.5 + 0.5 * Math.sin(Date.now() * 0.0018);
+        glow(12);
+        ctx.fillStyle = `rgba(0,220,255,${0.25 + 0.4 * p})`;
+        ctx.beginPath();
+        ctx.arc(CX, CY - 16, 2 + p * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ng();
+      }
 
-        // Formatar data
-        const diasSemana = [
-          "DOMINGO",
-          "SEGUNDA",
-          "TERÇA",
-          "QUARTA",
-          "QUINTA",
-          "SEXTA",
-          "SÁBADO",
-        ];
-        const meses = [
-          "JANEIRO",
-          "FEVEREIRO",
-          "MARÇO",
-          "ABRIL",
-          "MAIO",
-          "JUNHO",
-          "JULHO",
-          "AGOSTO",
-          "SETEMBRO",
-          "OUTUBRO",
-          "NOVEMBRO",
-          "DEZEMBRO",
-        ];
+      function render(ts) {
+        const t = ts * 0.00022;
+        drawBg();
+        ringOuter(t * 0.3);
+        ringTicks(-t * 0.18);
+        ringMain(-t * 0.12);
+        ringInner(t * 0.28);
+        drawCenter();
+        requestAnimationFrame(render);
+      }
+      requestAnimationFrame(render);
 
-        const diaSemana = diasSemana[now.getDay()];
-        const dia = now.getDate();
-        const mes = meses[now.getMonth()];
-
+      const D = [
+        "DOMINGO",
+        "SEGUNDA",
+        "TERCA",
+        "QUARTA",
+        "QUINTA",
+        "SEXTA",
+        "SABADO",
+      ];
+      const M = [
+        "JAN",
+        "FEV",
+        "MAR",
+        "ABR",
+        "MAI",
+        "JUN",
+        "JUL",
+        "AGO",
+        "SET",
+        "OUT",
+        "NOV",
+        "DEZ",
+      ];
+      function tick() {
+        const n = new Date();
+        document.getElementById("time").textContent =
+          String(n.getHours()).padStart(2, "0") +
+          ":" +
+          String(n.getMinutes()).padStart(2, "0");
         document.getElementById("date").textContent =
-          `${diaSemana} ${dia} ${mes}`;
+          D[n.getDay()] +
+          " · " +
+          String(n.getDate()).padStart(2, "0") +
+          " " +
+          M[n.getMonth()] +
+          " " +
+          n.getFullYear();
       }
-
-      // Inicializar
-      createStars();
-      createParticles();
-      updateDateTime();
-
-      // Atualizar a cada segundo
-      setInterval(updateDateTime, 1000);
+      tick();
+      setInterval(tick, 1000);
     </script>
   </body>
 </html>
