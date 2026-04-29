@@ -50,8 +50,14 @@ class Jarvis:
                 # Log da entrada do usuário
                 self.chat_logger.log_user_message(user_input)
                 
-                # Processar com IA
-                response_data = self.conversation.process_input(user_input)
+                # Verificar se é uma pergunta visual
+                image_data = None
+                if self._is_visual_question(user_input):
+                    print("👁️ Detectada pergunta visual, capturando webcam...")
+                    image_data = self._capture_webcam_for_analysis()
+                
+                # Processar com IA (com ou sem imagem)
+                response_data = self.conversation.process_input(user_input, image_data)
                 
                 self._display_response_info(response_data)
                 
@@ -85,3 +91,75 @@ class Jarvis:
         print(f"⚡ TRIGGER : {data.get('trigger', '')}")
         print(f"📄 TEXT    : {data.get('text', '')}")
         print(f"🔊 SPEECH  : {data.get('speech', '')}\n")
+    
+    def _is_visual_question(self, user_input: str) -> bool:
+        """
+        Verifica se a pergunta do usuário requer análise visual
+        
+        Args:
+            user_input: Texto do usuário
+            
+        Returns:
+            True se for uma pergunta visual
+        """
+        visual_keywords = [
+            "o que é isso",
+            "o que você vê",
+            "o que está vendo",
+            "me mostre",
+            "olha isso",
+            "vê isso",
+            "analisa isso",
+            "identifica isso",
+            "reconhece isso",
+            "o que tem aqui",
+            "o que aparece",
+            "descreve o que vê",
+            "o que é esta coisa",
+            "qual é esse objeto",
+            "me diz o que é"
+        ]
+        
+        user_input_lower = user_input.lower()
+        return any(keyword in user_input_lower for keyword in visual_keywords)
+    
+    def _capture_webcam_for_analysis(self) -> str:
+        """
+        Captura imagem da webcam para análise
+        
+        Returns:
+            Imagem em base64 ou None se falhar
+        """
+        try:
+            import cv2
+            import base64
+            
+            # Abrir webcam
+            cap = cv2.VideoCapture(0)
+            
+            if not cap.isOpened():
+                print("❌ Não foi possível abrir a webcam")
+                return None
+            
+            # Ler frame
+            ret, frame = cap.read()
+            
+            # Liberar webcam
+            cap.release()
+            
+            if not ret:
+                print("❌ Não foi possível capturar frame")
+                return None
+            
+            # Converter para JPEG em memória
+            _, buffer = cv2.imencode('.jpg', frame)
+            
+            # Converter para base64
+            image_base64 = base64.b64encode(buffer).decode('utf-8')
+            
+            print("✅ Imagem capturada com sucesso")
+            return image_base64
+            
+        except Exception as e:
+            print(f"❌ Erro ao capturar webcam: {e}")
+            return None

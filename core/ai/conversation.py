@@ -4,7 +4,8 @@ Processa entradas do usuário e gera respostas estruturadas
 """
 import ollama
 import re
-from typing import Dict, List, Any
+import base64
+from typing import Dict, List, Any, Optional
 from config.settings import SETTINGS
 from config.prompts import SYSTEM_PROMPT
 
@@ -23,17 +24,22 @@ class ConversationManager:
         ]
         self.max_history = SETTINGS["ai"]["max_conversation_history"]
     
-    def process_input(self, user_input: str) -> Dict[str, Any]:
+    def process_input(self, user_input: str, image_base64: Optional[str] = None) -> Dict[str, Any]:
         """
         Processa entrada do usuário e retorna resposta estruturada
         
         Args:
             user_input: Entrada do usuário
+            image_base64: Imagem em base64 para análise visual (opcional)
             
         Returns:
             Dicionário com resposta estruturada
         """
         try:
+            # Se houver imagem, usar processamento visual
+            if image_base64:
+                return self.process_visual_input(user_input, image_base64)
+            
             # Adicionar input do usuário ao histórico
             self._add_to_history("user", user_input)
             
@@ -51,6 +57,57 @@ class ConversationManager:
         except Exception as e:
             print(f"❌ Erro ao processar entrada: {e}")
             return self._create_error_response(str(e))
+    
+    def process_visual_input(self, user_input: str, image_base64: str) -> Dict[str, Any]:
+        """
+        Processa entrada do usuário com análise de imagem
+        
+        Args:
+            user_input: Pergunta do usuário sobre a imagem
+            image_base64: Imagem em base64
+            
+        Returns:
+            Dicionário com resposta estruturada
+        """
+        try:
+            print("👁️ Processando análise visual...")
+            
+            # Usar modelo com visão (llava ou llama3.2-vision)
+            vision_model = SETTINGS["ai"].get("vision_model", "llama3.2-vision")
+            
+            # Preparar mensagem com imagem
+            messages = [
+                {
+                    "role": "user",
+                    "content": user_input,
+                    "images": [image_base64]
+                }
+            ]
+            
+            # Gerar resposta com visão
+            response = ollama.chat(
+                model=vision_model,
+                messages=messages
+            )
+            
+            response_text = response["message"]["content"]
+            
+            # Log no histórico (sem a imagem para economizar espaço)
+            self._add_to_history("user", f"[VISÃO] {user_input}")
+            self._add_to_history("assistant", response_text)
+            
+            # Criar resposta estruturada simples para visão
+            return {
+                "trigger": "VISAO",
+                "text": response_text,
+                "speech": response_text[:200] if len(response_text) > 200 else response_text,
+                "actions": []
+            }
+            
+        except Exception as e:
+            print(f"❌ Erro ao processar visão: {e}")
+            error_msg = "Desculpe, não consegui analisar a imagem. Verifique se o modelo de visão está instalado."
+            return self._create_error_response(error_msg)
     
     def _generate_response(self) -> str:
         """

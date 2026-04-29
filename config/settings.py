@@ -9,7 +9,7 @@ from typing import Dict, Any
 SETTINGS: Dict[str, Any] = {
     # Configurações de áudio
     "audio": {
-        "microphone_index": 1,  # Índice do microfone padrão
+        "microphone_index": 3,  # Índice do microfone padrão
         "language": "pt-BR",    # Idioma para reconhecimento
         "voice": "pt-BR-AntonioNeural",  # Voz para síntese
         "volume_steps": 5,      # Passos para controle de volume
@@ -18,6 +18,7 @@ SETTINGS: Dict[str, Any] = {
     # Configurações de IA
     "ai": {
         "model": "llama3",      # Modelo padrão do Ollama
+        "vision_model": "llama3.2-vision",  # Modelo para análise de imagens
         "max_conversation_history": 20,  # Máx mensagens no histórico
         "timeout": 30,          # Timeout para requests (segundos)
     },

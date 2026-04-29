@@ -6,6 +6,7 @@ from .system.app_launcher import OpenAppAction, CloseAppAction
 from .system.file_manager import CreateFolderAction, DeleteAction, RenameAction
 from .system.system_utils import ScreenshotAction, CleanupAction, SystemInfoAction
 from .media.media_control import PlayMusicAction, PauseAction, VolumeAction
+from .vision.visual_qa import VisualQuestionAction
 
 # Função para registrar todas as ações
 def register_all_actions(action_manager: ActionManager):
@@ -29,6 +30,9 @@ def register_all_actions(action_manager: ActionManager):
     action_manager.register_action("tocar", PlayMusicAction())
     action_manager.register_action("pausar", PauseAction())
     action_manager.register_action("volume", VolumeAction())
+    
+    # Ações de visão
+    action_manager.register_action("ver", VisualQuestionAction())
 
 # Criar e configurar ActionManager padrão
 _default_action_manager = ActionManager()

@@ -7,6 +7,7 @@ Um assistente virtual inteligente em Python que utiliza reconhecimento de voz, p
 - **🎙️ Reconhecimento de Voz**: Converte fala em texto usando Google Speech Recognition
 - **🔊 Síntese de Voz**: Responde com voz natural usando Edge TTS
 - **🧠 IA Integrada**: Processamento de linguagem natural com Ollama/LLaMA
+- **👁️ Visão Computacional**: Análise de imagens via webcam com IA (NOVO!)
 - **⚡ Automação**: Controla aplicativos, gerencia arquivos e executa comandos do sistema
 - **📝 Logging**: Registra todas as conversas e interações
 - **🎛️ Configurável**: Sistema de configuração centralizada
@@ -50,6 +51,9 @@ jarvis_ia/
 │   ├── media/                # Ações de mídia
 │   │   ├── __init__.py
 │   │   └── media_control.py  # Controle de áudio/vídeo
+│   ├── vision/               # Ações de visão (NOVO!)
+│   │   ├── __init__.py
+│   │   └── visual_qa.py      # Perguntas visuais via webcam
 │   └── web/                  # Ações web (futuro)
 │       └── __init__.py
 ├── 
@@ -136,6 +140,14 @@ O Jarvis iniciará e ficará ouvindo comandos de voz. Pressione **ESC** para enc
 #### 🧹 Manutenção
 - "Limpar lixeira" - Abre lixeira para limpeza
 - "Informações do sistema" - Mostra info do computador
+
+#### 👁️ Visão Computacional (NOVO!)
+- "O que é isso?" - Captura webcam e identifica objetos
+- "O que você vê?" - Descreve o que a câmera está vendo
+- "Analisa isso" - Faz análise detalhada da imagem
+- "Qual é esse objeto?" - Identifica objetos específicos
+
+**Para usar visão:** Execute `install_vision.bat` (Windows) ou `install_vision.sh` (Linux/Mac) para instalar o modelo de IA com visão. Ver [documentação completa](docs/VISAO.md).
 
 ### Exemplos de Conversas
 
