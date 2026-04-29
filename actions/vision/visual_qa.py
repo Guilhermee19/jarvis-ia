@@ -58,11 +58,14 @@ class VisualQuestionAction(BaseAction):
             Caminho do arquivo da imagem ou None se falhar
         """
         try:
+            from config.settings import get_camera_index
+            camera_index = get_camera_index()
+            
             # Abrir webcam
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(camera_index)
             
             if not cap.isOpened():
-                print("❌ Não foi possível abrir a webcam")
+                print(f"❌ Não foi possível abrir a webcam (câmera {camera_index})")
                 return None
             
             # Ler frame
@@ -99,8 +102,11 @@ class VisualQuestionAction(BaseAction):
             String base64 da imagem ou None se falhar
         """
         try:
+            from config.settings import get_camera_index
+            camera_index = get_camera_index()
+            
             # Abrir webcam
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(camera_index)
             
             if not cap.isOpened():
                 return None

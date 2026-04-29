@@ -8,6 +8,7 @@ Um assistente virtual inteligente em Python que utiliza reconhecimento de voz, p
 - **🔊 Síntese de Voz**: Responde com voz natural usando Edge TTS
 - **🧠 IA Integrada**: Processamento de linguagem natural com Ollama/LLaMA
 - **👁️ Visão Computacional**: Análise de imagens via webcam com IA (NOVO!)
+- **💬 Widgets Flutuantes**: Chat e webcam em janelas arrastáveis (NOVO!)
 - **⚡ Automação**: Controla aplicativos, gerencia arquivos e executa comandos do sistema
 - **📝 Logging**: Registra todas as conversas e interações
 - **🎛️ Configurável**: Sistema de configuração centralizada
@@ -108,6 +109,16 @@ python -c "from core.audio.speech_to_text import SpeechToText; SpeechToText().li
 ```
 Anote o índice do seu microfone e ajuste em `config/settings.py`.
 
+6. **Configure a webcam (opcional, para recursos de visão):**
+```bash
+python configure_camera.py
+```
+Ou manualmente:
+```bash
+python -c "from config.settings import list_available_cameras; list_available_cameras()"
+```
+Anote o índice da sua câmera e ajuste em `config/settings.py`.
+
 ## 🎯 Uso
 
 ### Execução Básica
@@ -148,6 +159,20 @@ O Jarvis iniciará e ficará ouvindo comandos de voz. Pressione **ESC** para enc
 - "Qual é esse objeto?" - Identifica objetos específicos
 
 **Para usar visão:** Execute `install_vision.bat` (Windows) ou `install_vision.sh` (Linux/Mac) para instalar o modelo de IA com visão. Ver [documentação completa](docs/VISAO.md).
+
+#### 💬 Widgets Flutuantes (NOVO!)
+- "Abrir chat" - Abre widget de chat para conversar por texto
+- "Abre nossa conversa" - Mesmo que acima
+- "Abrir webcam" - Abre widget de webcam com visualização ao vivo
+- "Abre a câmera" - Mesmo que acima
+
+**Recursos dos Widgets:**
+- Interface moderna e arrastável (drag and drop)
+- Chat com histórico de conversas em tempo real
+- Webcam com feed ao vivo e análise visual
+- Totalmente integrado com todos os comandos do Jarvis
+
+**Ver documentação completa:** [docs/WIDGETS.md](docs/WIDGETS.md)
 
 ### Exemplos de Conversas
 

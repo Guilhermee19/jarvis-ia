@@ -15,6 +15,14 @@ SETTINGS: Dict[str, Any] = {
         "volume_steps": 5,      # Passos para controle de volume
     },
     
+    # Configurações de vídeo
+    "video": {
+        "camera_index": 0,      # Índice da webcam padrão (0 = primeira câmera)
+        "camera_width": 640,    # Largura do frame
+        "camera_height": 480,   # Altura do frame
+        "camera_fps": 30,       # FPS da captura
+    },
+    
     # Configurações de IA
     "ai": {
         "model": "llama3",      # Modelo padrão do Ollama
@@ -72,6 +80,7 @@ SETTINGS: Dict[str, Any] = {
 # Configurações de ambiente (podem ser sobrescritas por variáveis de ambiente)
 ENV_OVERRIDES = {
     "JARVIS_MICROPHONE_INDEX": ("audio", "microphone_index", int),
+    "JARVIS_CAMERA_INDEX": ("video", "camera_index", int),
     "JARVIS_AI_MODEL": ("ai", "model", str),
     "JARVIS_DEBUG": ("dev", "debug_mode", bool),
     "JARVIS_LOG_DIR": ("logging", "log_directory", str),
@@ -175,6 +184,56 @@ def get_microphone_index() -> int:
 def get_ai_model() -> str:
     """Obtém modelo de IA configurado"""
     return get_setting("ai.model", "llama3")
+
+
+def get_camera_index() -> int:
+    """Obtém índice da câmera configurada"""
+    return get_setting("video.camera_index", 0)
+
+
+def list_available_cameras(max_test: int = 5) -> list:
+    """
+    Lista câmeras disponíveis no sistema
+    
+    Args:
+        max_test: Número máximo de índices para testar
+        
+    Returns:
+        Lista de índices de câmeras disponíveis
+    """
+    try:
+        import cv2
+        available = []
+        
+        print("🔍 Procurando câmeras disponíveis...")
+        
+        for i in range(max_test):
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                if ret:
+                    # Tentar obter informações da câmera
+                    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    fps = int(cap.get(cv2.CAP_PROP_FPS))
+                    
+                    available.append(i)
+                    print(f"  ✓ Câmera {i}: {width}x{height} @ {fps}fps")
+                cap.release()
+        
+        if not available:
+            print("  ❌ Nenhuma câmera encontrada")
+        else:
+            print(f"\n📹 Total: {len(available)} câmera(s) disponível(is)")
+        
+        return available
+        
+    except ImportError:
+        print("❌ OpenCV não instalado. Execute: pip install opencv-python")
+        return []
+    except Exception as e:
+        print(f"❌ Erro ao listar câmeras: {e}")
+        return []
 
 
 # Carregar sobrescrições do ambiente ao importar

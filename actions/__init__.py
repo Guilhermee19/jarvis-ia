@@ -7,6 +7,7 @@ from .system.file_manager import CreateFolderAction, DeleteAction, RenameAction
 from .system.system_utils import ScreenshotAction, CleanupAction, SystemInfoAction
 from .media.media_control import PlayMusicAction, PauseAction, VolumeAction
 from .vision.visual_qa import VisualQuestionAction
+from .ui.ui_control import OpenChatAction, OpenWebcamAction
 
 # Função para registrar todas as ações
 def register_all_actions(action_manager: ActionManager):
@@ -33,6 +34,10 @@ def register_all_actions(action_manager: ActionManager):
     
     # Ações de visão
     action_manager.register_action("ver", VisualQuestionAction())
+    
+    # Ações de UI
+    action_manager.register_action("chat", OpenChatAction())
+    action_manager.register_action("webcam", OpenWebcamAction())
 
 # Criar e configurar ActionManager padrão
 _default_action_manager = ActionManager()

@@ -35,12 +35,38 @@ renomear  → renomear | pasta/arquivo | nome_atual | novo_nome
 deletar   → deletar | arquivo | caminho
 limpar    → limpar | lixeira
 volume    → volume | aumentar/diminuir/mudo | valor(opcional)
+chat      → chat (abre widget de chat para conversa por texto)
+webcam    → webcam (abre widget de webcam para visualização)
 
 Cada linha do ACTION = uma ação separada.
 
 ---
 
 EXEMPLOS:
+
+Usuário: "abre o chat" ou "abre nossa conversa"
+[TRIGGER]
+ACAO_PC
+[TEXT]
+Abrindo widget de chat para você conversar por texto.
+[SPEECH]
+Abrindo o chat, senhor.
+[ACTION]
+chat
+
+---
+
+Usuário: "abre a webcam" ou "quero ver pela câmera"
+[TRIGGER]
+ACAO_PC
+[TEXT]
+Abrindo widget de webcam para visualização.
+[SPEECH]
+Abrindo a webcam, senhor.
+[ACTION]
+webcam
+
+---
 
 Usuário: "abre o spotify e toca AC/DC"
 [TRIGGER]
