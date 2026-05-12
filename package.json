@@ -1,0 +1,24 @@
+{
+  "name": "jarvis-ia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jarvis IA - Assistente Virtual com React + Electron + Python",
+  "author": "Guilherme",
+  "license": "MIT",
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install",
+    "dev:backend": "cd backend && python app.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd frontend && npm run build",
+    "build:backend": "pyinstaller backend/app.py --onefile",
+    "clean": "rm -rf frontend/dist frontend/out backend/__pycache__ backend/**/__pycache__"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

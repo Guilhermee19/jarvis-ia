@@ -4,6 +4,7 @@ Jarvis IA - Classe principal do assistente virtual
 import os
 import threading
 from typing import Dict, List, Any
+from PySide6.QtCore import QObject, Signal
 from config.settings import SETTINGS
 from core.audio.speech_to_text import SpeechToText
 from core.audio.text_to_speech import TextToSpeech  
@@ -12,9 +13,15 @@ from core.logging.chat_logger import ChatLogger
 from actions import get_action_manager
 
 
-class Jarvis:
+class Jarvis(QObject):
+    # Signals para comunicação thread-safe com a UI
+    open_chat_requested = Signal()
+    open_webcam_requested = Signal()
+    chat_message_ready = Signal(str)  # Mensagem para adicionar ao chat
+    
     def __init__(self):
         """Inicializa o Jarvis com todos os componentes necessários"""
+        super().__init__()
         self.settings = SETTINGS
         self.speech_to_text = SpeechToText()
         self.text_to_speech = TextToSpeech()
@@ -25,7 +32,7 @@ class Jarvis:
         # Configurar ações de UI com referência ao Jarvis
         self._setup_ui_actions()
         
-        # Widgets flutuantes (serão criados quando solicitados)
+        # Widgets flutuantes (gerenciados pela JarvisWindow no thread principal)
         self.chat_widget = None
         self.webcam_widget = None
         
@@ -190,41 +197,14 @@ class Jarvis:
             return None
     
     def open_chat_widget(self):
-        """Abre o widget de chat"""
-        try:
-            from ui.widgets.chat_widget import ChatWidget
-            
-            if self.chat_widget is None:
-                self.chat_widget = ChatWidget()
-                # Conectar signal de mensagem enviada
-                self.chat_widget.message_sent.connect(self._handle_chat_message)
-                self.chat_widget.add_system_message("Chat iniciado! Digite seus comandos aqui.")
-            
-            self.chat_widget.show()
-            self.chat_widget.raise_()
-            self.chat_widget.activateWindow()
-            print("💬 Widget de chat aberto")
-            
-        except Exception as e:
-            print(f"❌ Erro ao abrir chat: {e}")
+        """Abre o widget de chat (emite signal para thread principal)"""
+        print("💬 Solicitando abertura do chat widget...")
+        self.open_chat_requested.emit()
     
     def open_webcam_widget(self):
-        """Abre o widget de webcam"""
-        try:
-            from ui.widgets.webcam_widget import WebcamWidget
-            
-            if self.webcam_widget is None:
-                self.webcam_widget = WebcamWidget()
-                # Conectar signal de pergunta
-                self.webcam_widget.ask_question.connect(self._handle_webcam_question)
-            
-            self.webcam_widget.show()
-            self.webcam_widget.raise_()
-            self.webcam_widget.activateWindow()
-            print("📹 Widget de webcam aberto")
-            
-        except Exception as e:
-            print(f"❌ Erro ao abrir webcam: {e}")
+        """Abre o widget de webcam (emite signal para thread principal)"""
+        print("📹 Solicitando abertura do webcam widget...")
+        self.open_webcam_requested.emit()
     
     def _handle_chat_message(self, message: str):
         """
@@ -252,17 +232,17 @@ class Jarvis:
             # Processar com IA
             response_data = self.conversation.process_input(message, image_data)
             
-            # Adicionar resposta ao chat
-            if self.chat_widget:
-                self.chat_widget.add_jarvis_message(response_data.get('text', ''))
+            # Adicionar resposta ao chat (via signal thread-safe)
+            if self.chat_widget and self.chat_widget.isVisible():
+                self.chat_message_ready.emit(f"JARVIS: {response_data.get('text', '')}")
             
             # Log da resposta
             self.chat_logger.log_jarvis_message(response_data['text'])
             
             # Executar ações se necessário
             if response_data.get("actions"):
-                if self.chat_widget:
-                    self.chat_widget.add_system_message("Executando ações...")
+                if self.chat_widget and self.chat_widget.isVisible():
+                    self.chat_message_ready.emit("SYSTEM: Executando ações...")
                 self.action_manager.execute_actions(response_data["actions"])
             
             # Falar resposta (opcional)
@@ -271,8 +251,8 @@ class Jarvis:
                 
         except Exception as e:
             print(f"❌ Erro ao processar mensagem do chat: {e}")
-            if self.chat_widget:
-                self.chat_widget.add_jarvis_message(f"Desculpe, ocorreu um erro: {e}")
+            if self.chat_widget and self.chat_widget.isVisible():
+                self.chat_message_ready.emit(f"JARVIS: Desculpe, ocorreu um erro: {e}")
     
     def _handle_webcam_question(self):
         """Processa pergunta sobre o que a webcam está vendo"""
@@ -301,8 +281,8 @@ class Jarvis:
             
             # Se chat estiver aberto, adicionar lá também
             if self.chat_widget and self.chat_widget.isVisible():
-                self.chat_widget.add_system_message("[Análise da webcam]")
-                self.chat_widget.add_jarvis_message(response_data.get('text', ''))
+                self.chat_message_ready.emit("SYSTEM: [Análise da webcam]")
+                self.chat_message_ready.emit(f"JARVIS: {response_data.get('text', '')}")
             
             # Falar resposta
             if response_data.get("speech"):

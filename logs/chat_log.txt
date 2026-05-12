@@ -1,8 +1,0 @@
-
-[2026-04-29 19:31:51] [USER]: Jefferson abra nossa conversa
-[2026-04-29 19:31:56] [JARVIS]: Abrindo widget de chat para você conversar por texto.
-[2026-04-29 19:32:09] [USER]: Jorge qual esse modelo de fone
-[2026-04-29 19:32:20] [USER]: Jesus olha aqui qual que foi nesse
-[2026-04-29 19:32:30] [USER]: jogos League we
-[2026-04-29 19:32:39] [USER]: Ligue a webcam
-[2026-04-29 19:32:40] [JARVIS]: Abrindo widget de webcam para visualização.
