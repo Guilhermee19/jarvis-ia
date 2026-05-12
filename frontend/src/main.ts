@@ -6,6 +6,11 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// Obter __dirname em ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let pythonProcess: ChildProcess | null = null;

@@ -2,37 +2,80 @@
  * CameraPanel Component
  * Painel de visualização da webcam com controles
  */
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Card, Button, Badge } from "./ui";
-import { useCamera } from "../hooks";
+import { useLocalCamera } from "../hooks";
+import websocketService from "../services/websocket";
 
 export default function CameraPanel() {
-  const { isCameraActive, cameraFrame, startCamera, stopCamera } = useCamera();
-  const [isRecording, setIsRecording] = useState(false);
+  const {
+    isActive,
+    error,
+    startCamera,
+    stopCamera,
+    captureFrame,
+    getVideoElement,
+    getCanvasElement,
+  } = useLocalCamera();
 
-  const handleToggleCamera = () => {
-    if (isCameraActive) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Conectar refs ao hook
+  useEffect(() => {
+    getVideoElement(videoRef.current);
+    getCanvasElement(canvasRef.current);
+  }, [getVideoElement, getCanvasElement]);
+
+  // Stream de frames para o backend quando ativo
+  useEffect(() => {
+    if (!isActive || !isStreaming) return;
+
+    const interval = setInterval(() => {
+      const frame = captureFrame();
+      if (frame) {
+        // Enviar frame para o backend via WebSocket
+        websocketService.sendCameraFrame(frame);
+      }
+    }, 1000 / 15); // 15 FPS
+
+    return () => clearInterval(interval);
+  }, [isActive, isStreaming, captureFrame]);
+
+  const handleToggleCamera = async () => {
+    if (isActive) {
       stopCamera();
+      setIsStreaming(false);
     } else {
-      startCamera();
+      await startCamera();
+      setIsStreaming(true);
     }
   };
 
   const handleToggleRecording = () => {
     setIsRecording(!isRecording);
-    // TODO: Implementar gravação
+    // TODO: Implementar gravação de vídeo
     console.log("Recording toggle:", !isRecording);
   };
 
   const handleCapture = () => {
-    // TODO: Capturar frame e enviar para análise
-    console.log("Capture frame");
+    const frame = captureFrame();
+    if (frame) {
+      console.log("📸 Frame captured, size:", frame.length);
+      // Enviar para análise
+      websocketService.analyzeImage(frame);
+    }
   };
 
   const handleAnalyze = () => {
-    // TODO: Solicitar análise visual da cena
-    console.log("Analyze scene");
+    const frame = captureFrame();
+    if (frame) {
+      console.log("🔍 Analyzing scene...");
+      websocketService.analyzeImage(frame);
+    }
   };
 
   return (
@@ -45,60 +88,39 @@ export default function CameraPanel() {
             Visão computacional em tempo real
           </p>
         </div>
-        <Badge variant={isCameraActive ? "success" : "error"} dot>
-          {isCameraActive ? "Active" : "Inactive"}
+        <Badge variant={isActive ? "success" : "error"} dot>
+          {isActive ? "Active" : "Inactive"}
         </Badge>
       </div>
 
       {/* Camera View */}
       <div className="flex-1 p-6 flex items-center justify-center">
         <div className="w-full h-full bg-dark-light rounded-lg overflow-hidden relative">
-          {isCameraActive ? (
+          {error && (
+            <div className="absolute top-4 left-4 right-4 z-50">
+              <div className="bg-error/20 border border-error text-white px-4 py-2 rounded-lg">
+                ❌ {error}
+              </div>
+            </div>
+          )}
+
+          {isActive ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="w-full h-full flex items-center justify-center relative"
             >
-              {/* Mostrar frame da câmera se disponível */}
-              {cameraFrame ? (
-                <img
-                  src={`data:image/jpeg;base64,${cameraFrame}`}
-                  alt="Camera feed"
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <>
-                  {/* Placeholder para vídeo da câmera */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10" />
+              {/* Vídeo da câmera LOCAL */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-contain"
+              />
 
-                  {/* Grid overlay */}
-                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 border border-primary/30">
-                    {[...Array(9)].map((_, i) => (
-                      <div key={i} className="border border-primary/20" />
-                    ))}
-                  </div>
-
-                  {/* Centro - Indicador de câmera ativa */}
-                  <div className="relative z-10">
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="w-20 h-20 rounded-full border-4 border-primary/50 flex items-center justify-center"
-                    >
-                      <svg
-                        className="w-10 h-10 text-primary"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                    </motion.div>
-                    <p className="text-center mt-4 text-sm text-gray-400">
-                      Camera Ready
-                    </p>
-                  </div>
-                </>
-              )}
+              {/* Canvas oculto para captura de frames */}
+              <canvas ref={canvasRef} className="hidden" />
 
               {/* Status overlay */}
               <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
@@ -124,13 +146,10 @@ export default function CameraPanel() {
               {/* Bottom info */}
               <div className="absolute bottom-4 left-4 right-4 flex gap-2">
                 <div className="glass px-3 py-1.5 rounded text-xs text-gray-400">
-                  FPS: 30
+                  FPS: 15
                 </div>
                 <div className="glass px-3 py-1.5 rounded text-xs text-gray-400">
-                  Objects: 0
-                </div>
-                <div className="glass px-3 py-1.5 rounded text-xs text-gray-400">
-                  Faces: 0
+                  Streaming: {isStreaming ? "Yes" : "No"}
                 </div>
               </div>
             </motion.div>
@@ -164,7 +183,7 @@ export default function CameraPanel() {
       <div className="px-6 py-4 border-t border-gray-800">
         <div className="flex gap-2">
           <Button
-            variant={isCameraActive ? "danger" : "primary"}
+            variant={isActive ? "danger" : "primary"}
             onClick={handleToggleCamera}
             leftIcon={
               <svg
@@ -182,13 +201,13 @@ export default function CameraPanel() {
               </svg>
             }
           >
-            {isCameraActive ? "Stop Camera" : "Start Camera"}
+            {isActive ? "Stop Camera" : "Start Camera"}
           </Button>
 
           <Button
             variant={isRecording ? "danger" : "ghost"}
             onClick={handleToggleRecording}
-            disabled={!isCameraActive}
+            disabled={!isActive}
             leftIcon={
               <div
                 className={`w-3 h-3 rounded-full ${isRecording ? "bg-white" : "bg-error"}`}
@@ -201,7 +220,7 @@ export default function CameraPanel() {
           <Button
             variant="ghost"
             onClick={handleCapture}
-            disabled={!isCameraActive}
+            disabled={!isActive}
             leftIcon={
               <svg
                 className="w-5 h-5"
@@ -232,7 +251,7 @@ export default function CameraPanel() {
           <Button
             variant="secondary"
             onClick={handleAnalyze}
-            disabled={!isCameraActive}
+            disabled={!isActive}
             leftIcon={
               <svg
                 className="w-5 h-5"

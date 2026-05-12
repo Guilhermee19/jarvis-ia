@@ -7,3 +7,4 @@ export { default as Dashboard } from './Dashboard';
 export { default as ChatPanel } from './ChatPanel';
 export { default as CameraPanel } from './CameraPanel';
 export { default as StatusPanel } from './StatusPanel';
+export { default as MicrophoneButton } from './MicrophoneButton';

@@ -2,11 +2,14 @@ import { BrowserWindow, app, ipcMain } from "electron";
 import { spawn } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
+import { fileURLToPath } from "url";
 //#region src/main.ts
 /**
 * Electron Main Process
 * Gerencia janela principal, processo Python e lifecycle do app
 */
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = path.dirname(__filename);
 var mainWindow = null;
 var pythonProcess = null;
 var isDev = process.env.NODE_ENV === "development";

@@ -136,6 +136,32 @@ class WebSocketService {
   }
 
   /**
+   * Enviar frame capturado da câmera
+   */
+  sendCameraFrame(frameBase64: string): void {
+    if (!this.socket) return;
+    this.socket.emit('camera_frame', { frame: frameBase64 });
+  }
+
+  /**
+   * Solicitar análise de imagem
+   */
+  analyzeImage(frameBase64: string): void {
+    if (!this.socket) return;
+    console.log('🔍 Requesting image analysis');
+    this.socket.emit('analyze_image', { frame: frameBase64 });
+  }
+
+  /**
+   * Enviar áudio gravado para processamento
+   */
+  sendAudio(audioBase64: string): void {
+    if (!this.socket) return;
+    console.log('🎤 Sending audio for transcription');
+    this.socket.emit('audio_data', { audio: audioBase64 });
+  }
+
+  /**
    * Executar ação do sistema
    */
   executeAction(action: string, params?: Record<string, any>): void {

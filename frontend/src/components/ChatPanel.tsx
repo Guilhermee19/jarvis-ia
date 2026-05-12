@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, Button, Input, Avatar, LoadingSpinner } from "./ui";
 import { useChat } from "../hooks";
+import MicrophoneButton from "./MicrophoneButton";
 
 export default function ChatPanel() {
   const { messages, sendMessage } = useChat();
@@ -40,6 +41,11 @@ export default function ChatPanel() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleTranscript = (text: string) => {
+    // Quando receber transcrição do áudio, adicionar ao input
+    setInputText((prev) => prev + (prev ? " " : "") + text);
   };
 
   return (
@@ -139,23 +145,10 @@ export default function ChatPanel() {
           />
         </div>
 
-        <div className="flex gap-2 mt-3">
-          <Button variant="ghost" size="sm">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-              />
-            </svg>
-            Voice
-          </Button>
+        <div className="flex gap-2 mt-3 items-center">
+          {/* Botão de microfone com feedback de áudio */}
+          <MicrophoneButton onTranscript={handleTranscript} className="mr-2" />
+
           <Button variant="ghost" size="sm">
             <svg
               className="w-4 h-4"
