@@ -1,6 +1,60 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Theme Configuration */
+@theme {
+  /* Colors */
+  --color-primary: #00dcff;
+  --color-primary-light: #4de9ff;
+  --color-primary-dark: #00a8cc;
+
+  --color-secondary: #667eea;
+  --color-secondary-light: #9fa4ff;
+  --color-secondary-dark: #4c51bf;
+
+  --color-accent: #764ba2;
+
+  --color-dark: #050c18;
+  --color-dark-light: #0f1923;
+  --color-dark-lighter: #1a2332;
+
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.2s ease-in-out;
+  --animate-slide-in: slide-in 0.3s ease-out;
+  --animate-pulse-glow: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(0, 220, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 220, 255, 0.8);
+  }
+}
 
 /* Base Styles */
 body {

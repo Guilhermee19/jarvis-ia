@@ -38,7 +38,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="h-screen bg-dark flex flex-col overflow-hidden">
+    <div className="h-svh bg-dark flex flex-col overflow-hidden">
       {/* Header */}
       <Header
         isConnected={isConnected}
@@ -54,7 +54,7 @@ export default function DashboardLayout({
         <Sidebar activeItem={activeView} onItemClick={setActiveView} />
 
         {/* Content */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );
