@@ -4,7 +4,12 @@
  */
 import { useState, useCallback, useRef } from 'react';
 
-export function useMicrophone() {
+interface UseMicrophoneProps {
+  deviceId?: string | null;
+}
+
+export function useMicrophone(props?: UseMicrophoneProps) {
+  const deviceId = props?.deviceId;
   const [isRecording, setIsRecording] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,13 +31,17 @@ export function useMicrophone() {
       setError(null);
       setAudioBlob(null);
       console.log('🎤 Requesting microphone access...');
+      if (deviceId) {
+        console.log('🎤 Using device:', deviceId);
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          deviceId: deviceId ? { exact: deviceId } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 16000, // Reduzir taxa de amostragem para menor tamanho
+          sampleRate: 48000, // Taxa de amostragem padrão
         },
       });
 
@@ -62,10 +71,10 @@ export function useMicrophone() {
       };
       updateAudioLevel();
 
-      // Criar MediaRecorder com bitrate reduzido
+      // Criar MediaRecorder com configurações otimizadas
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus',
-        audioBitsPerSecond: 16000, // Reduzir bitrate
+        audioBitsPerSecond: 128000, // Bitrate adequado para voz
       });
 
       mediaRecorderRef.current = mediaRecorder;
@@ -74,18 +83,23 @@ export function useMicrophone() {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          console.log('📦 Audio chunk received:', event.data.size, 'bytes');
+          // console.log('📦 Audio chunk received:', event.data.size, 'bytes');
         }
       };
 
       // Handler quando a gravação para
       mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // Criar blob final com tipo correto
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
         
         console.log('🛑 Recording stopped, audio blob size:', blob.size, 'bytes');
         
-        // Verificar se blob não é muito grande (max 1MB)
-        if (blob.size > 1024 * 1024) {
+        // Verificar se blob tem tamanho mínimo (pelo menos 5KB)
+        if (blob.size < 5000) {
+          console.warn('⚠️ Audio too small:', blob.size, 'bytes - provavelmente vazio ou inválido');
+          setError('Gravação muito curta ou sem áudio detectado');
+          setAudioBlob(null);
+        } else if (blob.size > 1024 * 1024) {
           console.warn('⚠️ Audio too large, truncating...');
           setError('Gravação muito longa, tente novamente com áudio mais curto');
           setAudioBlob(null);
@@ -100,8 +114,8 @@ export function useMicrophone() {
         audioChunksRef.current = [];
       };
 
-      // Iniciar gravação com chunks pequenos de 500ms
-      mediaRecorder.start(500);
+      // Iniciar gravação SEM timeslice para garantir arquivo completo
+      mediaRecorder.start();
       setIsRecording(true);
       console.log('✅ Recording started');
     } catch (err) {
@@ -109,12 +123,22 @@ export function useMicrophone() {
       setError(errorMessage);
       console.error('❌ Microphone error:', err);
     }
-  }, []);
+  }, [deviceId]);
 
   // Parar gravação
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      // Solicitar dados finais antes de parar
+      if (mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.requestData();
+        // Pequeno delay para garantir que os dados sejam escritos
+        setTimeout(() => {
+          if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+          }
+        }, 100);
+      }
+      
       setIsRecording(false);
       setAudioLevel(0);
       

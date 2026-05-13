@@ -44,7 +44,7 @@ function App() {
       {/* Main App */}
       <div className="flex-1 overflow-auto">
         <DashboardLayout isConnected={isConnected}>
-          <Dashboard />
+          <Dashboard isConnected={isConnected} />
         </DashboardLayout>
       </div>
     </div>

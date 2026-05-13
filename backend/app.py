@@ -129,21 +129,37 @@ async def chat_message(sid, data):
         # Processar com Jarvis
         response = await jarvis.process_text_message(text)
         
-        # Enviar resposta
+        # 1. Enviar resposta de texto IMEDIATAMENTE
         await sio.emit('chat:response', response, room=sid)
+        logger.info(f"📤 Resposta enviada: {response.get('text', '')[:50]}...")
         
-        # Executar ações se houver
-        if response.get('actions'):
-            logger.info(f"🤖 Executando {len(response['actions'])} ações")
-            try:
-                jarvis.action_manager.execute_actions(response['actions'])
-                logger.info("✅ Ações executadas com sucesso")
-            except Exception as action_error:
-                logger.error(f"❌ Erro ao executar ações: {action_error}")
-        
-        # Se tem áudio, enviar separadamente
+        # 2. Se tem áudio, enviar IMEDIATAMENTE
         if response.get('audio'):
             await sio.emit('audio:response', {'audio': response['audio']}, room=sid)
+            logger.info("🔊 Áudio de resposta enviado")
+        
+        # 3. Executar ações em background (não bloqueante)
+        if response.get('actions'):
+            logger.info(f"🤖 Iniciando execução de {len(response['actions'])} ações em background")
+            
+            import asyncio
+            from concurrent.futures import ThreadPoolExecutor
+            
+            def execute_actions_sync():
+                try:
+                    jarvis.action_manager.execute_actions(response['actions'])
+                    return True
+                except Exception as e:
+                    logger.error(f"❌ Erro ao executar ações: {e}")
+                    return False
+            
+            # Executar em background
+            loop = asyncio.get_event_loop()
+            with ThreadPoolExecutor() as executor:
+                success = await loop.run_in_executor(executor, execute_actions_sync)
+            
+            if success:
+                logger.info("✅ Ações executadas com sucesso")
         
         return {'status': 'processed'}
         
@@ -166,29 +182,45 @@ async def audio_data(sid, data):
         # Processar com Jarvis
         response = await jarvis.process_audio_data(audio_base64, sid)
         
-        # Enviar transcrição primeiro
+        # 1. Enviar transcrição primeiro
         if response.get('transcription'):
             await sio.emit('audio:transcription', {
                 'text': response['transcription']
             }, room=sid)
             logger.info(f"📝 Transcrição enviada: {response['transcription']}")
         
-        # Enviar resposta do Jarvis
+        # 2. Enviar resposta do Jarvis IMEDIATAMENTE
+        logger.info(f"📦 Objeto resposta completo: text={response.get('text', 'VAZIO')[:50]}, speech={response.get('speech', 'VAZIO')[:30]}, actions={len(response.get('actions', []))}, has_audio={bool(response.get('audio'))}")
         await sio.emit('chat:response', response, room=sid)
+        logger.info(f"📤 Resposta enviada para frontend")
         
-        # Executar ações se houver
-        if response.get('actions'):
-            logger.info(f"🤖 Executando {len(response['actions'])} ações")
-            try:
-                jarvis.action_manager.execute_actions(response['actions'])
-                logger.info("✅ Ações executadas com sucesso")
-            except Exception as action_error:
-                logger.error(f"❌ Erro ao executar ações: {action_error}")
-        
-        # Se tem áudio de resposta, enviar
+        # 3. Se tem áudio de resposta, enviar IMEDIATAMENTE
         if response.get('audio'):
             await sio.emit('audio:response', {'audio': response['audio']}, room=sid)
             logger.info("🔊 Áudio de resposta enviado")
+        
+        # 4. Executar ações em background (não bloqueante)
+        if response.get('actions'):
+            logger.info(f"🤖 Iniciando execução de {len(response['actions'])} ações em background")
+            
+            import asyncio
+            from concurrent.futures import ThreadPoolExecutor
+            
+            def execute_actions_sync():
+                try:
+                    jarvis.action_manager.execute_actions(response['actions'])
+                    return True
+                except Exception as e:
+                    logger.error(f"❌ Erro ao executar ações: {e}")
+                    return False
+            
+            # Executar em background
+            loop = asyncio.get_event_loop()
+            with ThreadPoolExecutor() as executor:
+                success = await loop.run_in_executor(executor, execute_actions_sync)
+            
+            if success:
+                logger.info("✅ Ações executadas com sucesso")
         
         return {'status': 'processed'}
         

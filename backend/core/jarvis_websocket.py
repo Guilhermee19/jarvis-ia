@@ -108,9 +108,14 @@ class JarvisWebSocket:
             text = await self._transcribe_audio(audio_bytes)
             
             if not text:
+                logger.warning("⚠️ Transcrição vazia ou falhou")
                 return {
-                    'text': '',
+                    'text': 'Desculpe, não consegui entender o áudio. Pode repetir?',
+                    'speech': 'Desculpe, não consegui entender o áudio. Pode repetir?',
                     'transcription': None,
+                    'trigger': 'error',
+                    'actions': [],
+                    'audio': None,
                     'error': 'Não foi possível reconhecer o áudio'
                 }
             
@@ -134,14 +139,18 @@ class JarvisWebSocket:
         except Exception as e:
             logger.error(f"❌ Erro ao processar áudio: {e}")
             return {
-                'text': f'Erro ao processar áudio: {str(e)}',
+                'text': f'Desculpe, ocorreu um erro ao processar o áudio: {str(e)}',
+                'speech': 'Desculpe, ocorreu um erro ao processar o áudio.',
                 'transcription': None,
+                'trigger': 'error',
+                'actions': [],
+                'audio': None,
                 'error': str(e)
             }
     
     async def _transcribe_audio(self, audio_bytes: bytes) -> Optional[str]:
         """
-        Transcreve áudio usando SpeechRecognition
+        Transcreve áudio usando OpenAI Whisper (muito mais preciso que Google)
         
         Args:
             audio_bytes: Bytes do áudio
@@ -150,61 +159,51 @@ class JarvisWebSocket:
             Texto transcrito ou None
         """
         try:
-            import speech_recognition as sr
-            
-            recognizer = sr.Recognizer()
-            
-            # Converter bytes para AudioData
-            # O MediaRecorder do navegador envia em formato WebM/Opus
-            # Precisamos converter para formato WAV que o SpeechRecognition entende
-            
-            # Criar arquivo temporário para conversão
+            import whisper
             import tempfile
             import os
             
-            # Salvar áudio recebido
-            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_input:
-                temp_input.write(audio_bytes)
-                temp_input_path = temp_input.name
+            # Salvar áudio recebido diretamente
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+                temp_file.write(audio_bytes)
+                temp_path = temp_file.name
             
-            # Converter para WAV usando pydub (se disponível) ou ffmpeg
             try:
-                from pydub import AudioSegment
-                audio = AudioSegment.from_file(temp_input_path)
+                # Carregar modelo Whisper (cache para não recarregar sempre)
+                if not hasattr(self, '_whisper_model'):
+                    logger.info("🤖 Carregando modelo Whisper 'base'...")
+                    self._whisper_model = whisper.load_model("base")
                 
-                # Exportar como WAV
-                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_output:
-                    temp_output_path = temp_output.name
+                # Transcrever áudio diretamente (Whisper usa ffmpeg internamente)
+                logger.info("🎧 Transcrevendo áudio...")
+                result = self._whisper_model.transcribe(
+                    temp_path,
+                    language="pt",  # Português
+                    fp16=False,  # Desabilitar FP16 para compatibilidade CPU
+                    verbose=False
+                )
                 
-                audio.export(temp_output_path, format='wav')
+                text = result["text"].strip()
                 
-                # Ler WAV com SpeechRecognition
-                with sr.AudioFile(temp_output_path) as source:
-                    audio_data = recognizer.record(source)
+                # Limpar arquivo temporário
+                os.unlink(temp_path)
                 
-                # Limpar arquivos temporários
-                os.unlink(temp_input_path)
-                os.unlink(temp_output_path)
+                if text:
+                    logger.info(f"✅ Transcrição Whisper: {text}")
+                    return text
+                else:
+                    logger.warning("⚠️ Transcrição vazia")
+                    return None
                 
-            except ImportError:
-                logger.warning("⚠️ pydub não disponível, tentando conversão direta")
-                # Tentar conversão direta (pode não funcionar com todos os formatos)
-                audio_data = sr.AudioData(audio_bytes, 48000, 2)
-            
-            # Reconhecer usando Google
-            text = recognizer.recognize_google(
-                audio_data,
-                language=self.settings["audio"]["language"]
-            )
-            
-            return text
-            
-        except sr.UnknownValueError:
-            logger.warning("⚠️ Não foi possível entender o áudio")
-            return None
-        except sr.RequestError as e:
-            logger.error(f"❌ Erro na API do Google: {e}")
-            return None
+            except Exception as e:
+                logger.error(f"❌ Erro na transcrição Whisper: {e}")
+                # Limpar arquivo
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
+                return None
+                
         except Exception as e:
             logger.error(f"❌ Erro ao transcrever áudio: {e}")
             return None

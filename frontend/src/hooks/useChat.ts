@@ -30,24 +30,55 @@ export function useChat() {
   // Listener para respostas do AI
   useEffect(() => {
     const handleChatResponse = (data: any) => {
-      console.log('📨 Received chat response:', data);
+      console.log('📨 Resposta completa do Jarvis:', data);
+      console.log('📝 Campos da resposta:', {
+        text: data.text,
+        speech: data.speech,
+        trigger: data.trigger,
+        actions: data.actions,
+        hasAudio: !!data.audio,
+        metadata: data.metadata
+      });
+
+      // Verificar se tem texto na resposta
+      const responseText = data.text || data.speech || data.response || 'Sem resposta';
+      
+      if (!data.text && !data.speech) {
+        console.warn('⚠️ Resposta sem texto:', data);
+      }
 
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: data.text || data.response || 'Sem resposta',
+        text: responseText,
         timestamp: Date.now(),
       };
 
       addMessage(aiMessage);
+      console.log('✅ Mensagem do Jarvis adicionada ao chat:', aiMessage);
     };
 
-    websocketService.on('chat_message', handleChatResponse);
-    websocketService.on('chat_response', handleChatResponse);
+    // Listener para transcrições de áudio (adicionar mensagem do usuário)
+    const handleTranscription = (data: any) => {
+      console.log('📝 Transcrição recebida:', data.text);
+
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        sender: 'user',
+        text: data.text,
+        timestamp: Date.now(),
+      };
+
+      addMessage(userMessage);
+      console.log('✅ Mensagem do usuário adicionada ao chat:', userMessage);
+    };
+
+    websocketService.on('chat:response', handleChatResponse);
+    websocketService.on('audio:transcription', handleTranscription);
 
     return () => {
-      websocketService.off('chat_message', handleChatResponse);
-      websocketService.off('chat_response', handleChatResponse);
+      websocketService.off('chat:response', handleChatResponse);
+      websocketService.off('audio:transcription', handleTranscription);
     };
   }, [addMessage]);
 

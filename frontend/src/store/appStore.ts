@@ -24,6 +24,10 @@ interface AppState {
   setCameraActive: (active: boolean) => void;
   setCameraFrame: (frame: string | null) => void;
 
+  // Microphone
+  selectedMicrophoneId: string | null;
+  setSelectedMicrophoneId: (deviceId: string | null) => void;
+
   // System
   systemStatus: SystemStatus;
   setSystemStatus: (status: Partial<SystemStatus>) => void;
@@ -54,6 +58,10 @@ export const useAppStore = create<AppState>((set) => ({
   cameraFrame: null,
   setCameraActive: (active) => set({ isCameraActive: active }),
   setCameraFrame: (frame) => set({ cameraFrame: frame }),
+
+  // Microphone
+  selectedMicrophoneId: null,
+  setSelectedMicrophoneId: (deviceId) => set({ selectedMicrophoneId: deviceId }),
 
   // System
   systemStatus: {
