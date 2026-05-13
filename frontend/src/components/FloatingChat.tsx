@@ -73,14 +73,21 @@ export default function FloatingChat({
         try {
           const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
           audio.volume = 0.8;
-          audio.play()
+          audio
+            .play()
             .then(() => console.log("✅ Áudio reproduzido com sucesso"))
-            .catch(err => {
+            .catch((err) => {
               console.error("❌ Erro ao reproduzir áudio:", err);
               // Tentar novamente se falhar por política de autoplay
-              document.addEventListener('click', () => {
-                audio.play().catch(e => console.error("Erro após click:", e));
-              }, { once: true });
+              document.addEventListener(
+                "click",
+                () => {
+                  audio
+                    .play()
+                    .catch((e) => console.error("Erro após click:", e));
+                },
+                { once: true },
+              );
             });
         } catch (err) {
           console.error("❌ Erro ao criar áudio:", err);
