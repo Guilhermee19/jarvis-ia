@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "./ui";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, MessageCircle } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useMicrophone } from "../hooks/useMicrophone";
 import websocketService from "../services/websocket";
@@ -16,6 +16,7 @@ interface DashboardProps {
 
 export default function Dashboard({ isConnected = false }: DashboardProps) {
   const [isMicOn, setIsMicOn] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const { selectedMicrophoneId } = useAppStore();
   const { startRecording, stopRecording } = useMicrophone({
     deviceId: selectedMicrophoneId,
@@ -124,6 +125,17 @@ export default function Dashboard({ isConnected = false }: DashboardProps) {
         <Button
           variant="ghost"
           className="col-span-2 h-max cursor-pointer"
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          title={isChatOpen ? "Fechar Chat" : "Abrir Chat"}
+        >
+          <MessageCircle
+            size={18}
+            className={isChatOpen ? "text-primary" : "text-gray-500"}
+          />
+        </Button>
+        <Button
+          variant="ghost"
+          className="col-span-2 h-max cursor-pointer"
           onClick={() => setIsMicOn(!isMicOn)}
           disabled={!isConnected}
         >
@@ -163,7 +175,7 @@ export default function Dashboard({ isConnected = false }: DashboardProps) {
       )}
 
       {/* Chat Flutuante Arrastável */}
-      <FloatingChat />
+      <FloatingChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </motion.div>
   );
 }

@@ -4,14 +4,24 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Minimize2 } from "lucide-react";
+import { MessageCircle, X, Minimize2, Send, Bot, User } from "lucide-react";
 import { useChat } from "../hooks";
 import websocketService from "../services/websocket";
+import { useAppStore } from "../store/appStore";
 
-export default function FloatingChat() {
+interface FloatingChatProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function FloatingChat({
+  isOpen = true,
+  onClose,
+}: FloatingChatProps) {
   const { messages } = useChat();
+  const { addMessage } = useAppStore();
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const constraintsRef = useRef(null);
 
@@ -24,20 +34,68 @@ export default function FloatingChat() {
     scrollToBottom();
   }, [messages]);
 
-  // Escutar transcrições e adicionar ao chat
-  useEffect(() => {
-    const handleTranscription = (data: any) => {
-      console.log("📝 Transcrição recebida no chat:", data.text);
+  // Função para enviar mensagem de texto
+  const handleSendMessage = () => {
+    const text = inputValue.trim();
+    if (!text) return;
+
+    // Adicionar mensagem do usuário ao chat
+    const userMessage = {
+      id: Date.now().toString(),
+      sender: "user" as const,
+      text: text,
+      timestamp: Date.now(),
     };
 
-    websocketService.on("audio:transcription", handleTranscription);
+    addMessage(userMessage);
+    console.log("📤 Enviando mensagem de texto:", text);
+
+    // Enviar via WebSocket
+    websocketService.sendChatMessage(text);
+
+    // Limpar input
+    setInputValue("");
+  };
+
+  // Enviar com Enter
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Listener para reproduzir áudio das respostas do Jarvis
+  useEffect(() => {
+    const handleAudioResponse = (data: any) => {
+      console.log("🔊 Reproduzindo áudio do Jarvis");
+      if (data.audio) {
+        try {
+          const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+          audio.volume = 0.8;
+          audio.play()
+            .then(() => console.log("✅ Áudio reproduzido com sucesso"))
+            .catch(err => {
+              console.error("❌ Erro ao reproduzir áudio:", err);
+              // Tentar novamente se falhar por política de autoplay
+              document.addEventListener('click', () => {
+                audio.play().catch(e => console.error("Erro após click:", e));
+              }, { once: true });
+            });
+        } catch (err) {
+          console.error("❌ Erro ao criar áudio:", err);
+        }
+      }
+    };
+
+    websocketService.on("audio:response", handleAudioResponse);
 
     return () => {
-      websocketService.off("audio:transcription", handleTranscription);
+      websocketService.off("audio:response", handleAudioResponse);
     };
   }, []);
 
-  if (!isVisible) return null;
+  if (!isOpen) return null;
 
   return (
     <div
@@ -83,7 +141,7 @@ export default function FloatingChat() {
               className="w-96 h-[500px] bg-dark/95 backdrop-blur-md border border-primary/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             >
               {/* Header - Área de Drag */}
-              <div className="bg-gradient-to-r from-primary/20 to-secondary/20 px-4 py-3 border-b border-primary/30 cursor-move flex items-center justify-between">
+              <div className="bg-gradient-to-r from-primary/20 to-secondary/20 px-2 py-1 border-b border-primary/30 cursor-move flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageCircle size={18} className="text-primary" />
                   <h3 className="text-sm font-semibold text-white">
@@ -102,7 +160,7 @@ export default function FloatingChat() {
                     />
                   </button>
                   <button
-                    onClick={() => setIsVisible(false)}
+                    onClick={onClose}
                     className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
                     title="Fechar"
                   >
@@ -112,7 +170,7 @@ export default function FloatingChat() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-2 space-y-3">
                 <AnimatePresence>
                   {messages.length === 0 ? (
                     <motion.div
@@ -136,23 +194,25 @@ export default function FloatingChat() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className={`flex ${
-                          message.sender === "user"
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                          className={`max-w-[85%] rounded-md px-2 py-1 ${
                             message.sender === "user"
-                              ? "bg-gradient-to-r from-primary to-secondary text-white rounded-br-md"
-                              : "bg-dark-light border border-primary/20 text-gray-200 rounded-bl-md"
+                              ? "text-white rounded-br-none"
+                              : "text-gray-200/70 rounded-bl-none"
                           }`}
                         >
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          <p className="flex items-start text-xs leading-relaxed whitespace-pre-wrap">
+                            <span className="mr-2 mt-1">
+                              {message.sender === "user" ? (
+                                <User size={14} />
+                              ) : (
+                                <Bot size={14} />
+                              )}
+                            </span>
                             {message.text}
                           </p>
-                          <p
+                          {/* <p
                             className={`text-xs mt-1 ${
                               message.sender === "user"
                                 ? "text-white/70"
@@ -166,7 +226,7 @@ export default function FloatingChat() {
                                 minute: "2-digit",
                               },
                             )}
-                          </p>
+                          </p> */}
                         </div>
                       </motion.div>
                     ))
@@ -175,11 +235,26 @@ export default function FloatingChat() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Footer */}
+              {/* Input Area */}
               <div className="px-4 py-3 border-t border-primary/20 bg-dark-light/50">
-                <p className="text-xs text-gray-400 text-center">
-                  🎤 Fale para adicionar mensagens automaticamente
-                </p>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Digite sua mensagem..."
+                    className="flex-1 border border-primary/10 rounded-lg px-2 py-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-primary/60 transition-colors"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim()}
+                    className="disabled:text-white/50 disabled:cursor-not-allowed text-white rounded-lg p-2.5 transition-all duration-200 flex items-center justify-center"
+                    title="Enviar mensagem"
+                  >
+                    <Send size={14} />
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

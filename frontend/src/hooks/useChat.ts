@@ -31,20 +31,24 @@ export function useChat() {
   useEffect(() => {
     const handleChatResponse = (data: any) => {
       console.log('📨 Resposta completa do Jarvis:', data);
-      console.log('📝 Campos da resposta:', {
-        text: data.text,
-        speech: data.speech,
-        trigger: data.trigger,
-        actions: data.actions,
-        hasAudio: !!data.audio,
-        metadata: data.metadata
-      });
 
       // Verificar se tem texto na resposta
       const responseText = data.text || data.speech || data.response || 'Sem resposta';
       
       if (!data.text && !data.speech) {
         console.warn('⚠️ Resposta sem texto:', data);
+      }
+
+      // Adicionar APENAS se não for duplicata (verificar última mensagem)
+      const lastMessage = messages[messages.length - 1];
+      const isDuplicate = lastMessage && 
+                         lastMessage.sender === 'ai' && 
+                         lastMessage.text === responseText &&
+                         (Date.now() - lastMessage.timestamp) < 1000; // Menos de 1 segundo
+
+      if (isDuplicate) {
+        console.warn('⚠️ Mensagem duplicada detectada, ignorando');
+        return;
       }
 
       const aiMessage: ChatMessage = {
@@ -55,12 +59,24 @@ export function useChat() {
       };
 
       addMessage(aiMessage);
-      console.log('✅ Mensagem do Jarvis adicionada ao chat:', aiMessage);
+      console.log('✅ Mensagem do Jarvis adicionada ao chat');
     };
 
     // Listener para transcrições de áudio (adicionar mensagem do usuário)
     const handleTranscription = (data: any) => {
       console.log('📝 Transcrição recebida:', data.text);
+
+      // Verificar duplicatas de transcrição
+      const lastMessage = messages[messages.length - 1];
+      const isDuplicate = lastMessage && 
+                         lastMessage.sender === 'user' && 
+                         lastMessage.text === data.text &&
+                         (Date.now() - lastMessage.timestamp) < 1000;
+
+      if (isDuplicate) {
+        console.warn('⚠️ Transcrição duplicada detectada, ignorando');
+        return;
+      }
 
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -70,7 +86,7 @@ export function useChat() {
       };
 
       addMessage(userMessage);
-      console.log('✅ Mensagem do usuário adicionada ao chat:', userMessage);
+      console.log('✅ Mensagem do usuário adicionada ao chat');
     };
 
     websocketService.on('chat:response', handleChatResponse);
@@ -80,7 +96,7 @@ export function useChat() {
       websocketService.off('chat:response', handleChatResponse);
       websocketService.off('audio:transcription', handleTranscription);
     };
-  }, [addMessage]);
+  }, [addMessage, messages]);
 
   return {
     messages,
