@@ -1,13 +1,13 @@
-/**
- * Dashboard Component
- * Visualização principal com todos os painéis
- */
+"use client";
+
 import { motion } from "framer-motion";
-import ChatPanel from "./ChatPanel";
-import CameraPanel from "./CameraPanel";
-import StatusPanel from "./StatusPanel";
+import { Button } from "./ui";
+import { MicOff } from "lucide-react";
+import { useState } from "react";
 
 export default function Dashboard() {
+  const [isMicOn, setIsMicOn] = useState(false);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -18,41 +18,26 @@ export default function Dashboard() {
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-      },
-    },
-  };
-
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="h-full grid grid-cols-12 gap-6"
+      className="relative w-full h-full bg-radial from-[#0d1727] from-30% to-[#060a0f] to-80% backdrop-blur-lg flex justify-center items-center"
     >
-      {/* Left Column - Chat */}
-      <motion.div variants={itemVariants} className="col-span-4 h-full">
-        <ChatPanel />
-      </motion.div>
+      <div className="absolute text-sm border-2 border-primary/50 aspect-square flex justify-center items-center rounded-full p-10">
+        <div className="font-light p-0 m-0 text-2xl">J A R V I S</div>
+      </div>
 
-      {/* Middle Column - Camera */}
-      <motion.div variants={itemVariants} className="col-span-8 h-full">
-        <CameraPanel />
-      </motion.div>
-
-      {/* Right Column - Status */}
-      {/* <motion.div
-        variants={itemVariants}
-        className="col-span-3 h-full overflow-y-auto"
-      >
-        <StatusPanel />
-      </motion.div> */}
+      <div className="fixed bottom-0 flex justify-center items-center gap-6 w-full px-6 py-4">
+        <Button
+          variant="ghost"
+          className="col-span-2 h-max cursor-pointer"
+          onClick={() => setIsMicOn(!isMicOn)}
+        >
+          {isMicOn ? <MicOff size={18} /> : <MicOff size={18} />}
+        </Button>
+      </div>
     </motion.div>
   );
 }

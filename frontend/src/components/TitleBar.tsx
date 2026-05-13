@@ -35,34 +35,14 @@ export default function TitleBar() {
   };
 
   return (
-    <div className="relative flex items-center justify-between h-12 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 backdrop-blur-lg border-b border-gray-700/50 select-none">
-      {/* Linha de destaque superior */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
+    <div className="relative flex items-center justify-between bg-black/30 backdrop-blur-lg select-none">
       {/* Área draggável - App Name */}
       <div
-        className="flex-1 flex items-center gap-3 px-6 cursor-move"
+        className="flex-1 flex items-center gap-3 px-4 cursor-move"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        {/* Logo Jarvis */}
-        <div className="relative">
-          <motion.div
-            animate={{
-              boxShadow: [
-                "0 0 10px rgba(0, 191, 255, 0.3)",
-                "0 0 20px rgba(0, 191, 255, 0.5)",
-                "0 0 10px rgba(0, 191, 255, 0.3)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary via-blue-500 to-secondary flex items-center justify-center shadow-lg"
-          >
-            <span className="text-white text-sm font-bold">J</span>
-          </motion.div>
-        </div>
-
         {/* Nome e Status */}
-        <div className="flex flex-col">
+        <div className="flex gap-4">
           <span className="text-sm font-semibold text-white tracking-wide">
             JARVIS IA
           </span>
@@ -77,35 +57,9 @@ export default function TitleBar() {
         </div>
       </div>
 
-      {/* Centro - Relógio */}
-      <div
-        className="flex items-center gap-2 px-4"
-        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
-      >
-        <svg
-          className="w-3.5 h-3.5 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span className="text-xs font-medium text-gray-400 tabular-nums">
-          {currentTime.toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
-      </div>
-
       {/* Window Controls - Não draggável */}
       <div
-        className="flex items-center gap-1 px-3 h-full"
+        className="flex items-center gap-1 px-2 h-full"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
       >
         {/* Minimize */}
@@ -116,7 +70,7 @@ export default function TitleBar() {
             backgroundColor: "rgba(100, 100, 100, 0.3)",
           }}
           whileTap={{ scale: 0.9 }}
-          className="w-10 h-8 rounded-md flex items-center justify-center text-gray-400 hover:text-white transition-all"
+          className="w-10 h-8 rounded-md cursor-pointer flex items-center justify-center text-gray-400 hover:text-white transition-all"
           title="Minimizar"
         >
           <svg
@@ -137,7 +91,7 @@ export default function TitleBar() {
             backgroundColor: "rgba(100, 100, 100, 0.3)",
           }}
           whileTap={{ scale: 0.9 }}
-          className="w-10 h-8 rounded-md flex items-center justify-center text-gray-400 hover:text-white transition-all"
+          className="w-10 h-8 rounded-md cursor-pointer flex items-center justify-center text-gray-400 hover:text-white transition-all"
           title={isMaximized ? "Restaurar" : "Maximizar"}
         >
           {isMaximized ? (
@@ -180,7 +134,7 @@ export default function TitleBar() {
           onClick={handleClose}
           whileHover={{ scale: 1.1, backgroundColor: "#dc2626" }}
           whileTap={{ scale: 0.9 }}
-          className="w-10 h-8 rounded-md flex items-center justify-center text-gray-400 hover:text-white transition-all"
+          className="w-10 h-8 rounded-md cursor-pointer flex items-center justify-center text-gray-400 hover:text-white transition-all"
           title="Fechar"
         >
           <svg

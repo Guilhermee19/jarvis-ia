@@ -41,7 +41,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "bg-gradient-to-r from-secondary to-accent text-white hover:opacity-90 glow-secondary",
       accent: "bg-accent text-white hover:bg-accent/90",
       ghost:
-        "bg-transparent text-primary hover:bg-primary/10 border border-primary/30",
+        "bg-transparent text-primary hover:bg-primary/10 border border-primary/30 !p-2 !rounded-full",
       danger: "bg-error text-white hover:bg-error/90",
     };
 
