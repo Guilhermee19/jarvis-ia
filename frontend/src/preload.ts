@@ -21,6 +21,16 @@ const electronAPI = {
   },
   
   /**
+   * Controles de janela
+   */
+  window: {
+    minimize: () => ipcRenderer.send('window-minimize'),
+    maximize: () => ipcRenderer.send('window-maximize'),
+    close: () => ipcRenderer.send('window-close'),
+    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window-is-maximized'),
+  },
+  
+  /**
    * Informações da plataforma
    */
   platform: process.platform,

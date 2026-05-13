@@ -42,17 +42,17 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Middle Column - Camera */}
-      <motion.div variants={itemVariants} className="col-span-5 h-full">
+      <motion.div variants={itemVariants} className="col-span-8 h-full">
         <CameraPanel />
       </motion.div>
 
       {/* Right Column - Status */}
-      <motion.div
+      {/* <motion.div
         variants={itemVariants}
         className="col-span-3 h-full overflow-y-auto"
       >
         <StatusPanel />
-      </motion.div>
+      </motion.div> */}
     </motion.div>
   );
 }

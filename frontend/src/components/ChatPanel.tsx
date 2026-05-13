@@ -74,7 +74,7 @@ export default function ChatPanel() {
 
   const handleVoiceCommand = (command: string) => {
     // Processar comando de voz automaticamente
-    console.log('🎙️ Comando de voz recebido:', command);
+    console.log("🎙️ Comando de voz recebido:", command);
     setIsLoading(true);
     sendMessage(command);
   };

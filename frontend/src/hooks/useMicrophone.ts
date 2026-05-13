@@ -32,7 +32,7 @@ export function useMicrophone() {
       streamRef.current = stream;
       audioChunksRef.current = [];
 
-      // Criar MediaRecorder
+      // Criar MediaRecorder com limite de tamanho
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus',
       });
@@ -58,8 +58,8 @@ export function useMicrophone() {
         console.log('🛑 Recording stopped, audio blob size:', audioBlob.size);
       };
 
-      // Iniciar gravação
-      mediaRecorder.start();
+      // Iniciar gravação com chunks de 1 segundo (limita tamanho)
+      mediaRecorder.start(1000);
       setIsRecording(true);
       console.log('✅ Recording started');
     } catch (err) {

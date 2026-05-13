@@ -2,15 +2,18 @@
  * VoiceActivation Component
  * Interface para ativação por voz contínua com feedback visual
  */
-import { motion, AnimatePresence } from 'framer-motion';
-import { useVoiceActivation } from '../hooks/useVoiceActivation';
+import { motion, AnimatePresence } from "framer-motion";
+import { useVoiceActivation } from "../hooks/useVoiceActivation";
 
 interface VoiceActivationProps {
   onCommand: (command: string) => void;
   className?: string;
 }
 
-export default function VoiceActivation({ onCommand, className = '' }: VoiceActivationProps) {
+export default function VoiceActivation({
+  onCommand,
+  className = "",
+}: VoiceActivationProps) {
   const {
     isActive,
     isListening,
@@ -19,8 +22,8 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
     error,
     toggleVoiceActivation,
   } = useVoiceActivation({
-    wakeWords: ['jarvis', 'ok jarvis', 'hey jarvis', 'ei jarvis'],
-    language: 'pt-BR',
+    wakeWords: ["jarvis", "ok jarvis", "hey jarvis", "ei jarvis"],
+    language: "pt-BR",
     autoProcess: true,
     onCommand,
   });
@@ -35,8 +38,8 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
           whileTap={{ scale: 0.98 }}
           className={`relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
             isActive
-              ? 'bg-primary text-white shadow-lg shadow-primary/50'
-              : 'bg-base-200 text-base-content hover:bg-base-300'
+              ? "bg-primary text-white shadow-lg shadow-primary/50"
+              : "bg-base-200 text-base-content hover:bg-base-300"
           }`}
         >
           {/* Ícone animado */}
@@ -53,7 +56,7 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
                   transition={{
                     duration: 2,
                     repeat: Infinity,
-                    ease: 'easeInOut',
+                    ease: "easeInOut",
                   }}
                 />
                 <motion.div
@@ -66,7 +69,7 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
                     duration: 2,
                     delay: 0.5,
                     repeat: Infinity,
-                    ease: 'easeInOut',
+                    ease: "easeInOut",
                   }}
                 />
                 {/* Ícone central */}
@@ -102,11 +105,11 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
           {/* Texto */}
           <div className="flex flex-col items-start">
             <span className="text-sm font-medium">
-              {isActive ? 'Escuta Ativa' : 'Ativar Escuta Contínua'}
+              {isActive ? "Escuta Ativa" : "Ativar Escuta Contínua"}
             </span>
             {isActive && (
               <span className="text-xs opacity-75">
-                {isListening ? 'Ouvindo...' : 'Aguardando...'}
+                {isListening ? "Ouvindo..." : "Aguardando..."}
               </span>
             )}
           </div>
@@ -121,7 +124,7 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: "easeInOut",
               }}
             />
           )}
@@ -176,9 +179,7 @@ export default function VoiceActivation({ onCommand, className = '' }: VoiceActi
           <div className="flex items-start gap-2">
             <span className="text-info text-lg">💡</span>
             <div className="flex-1">
-              <p className="text-xs font-medium text-info mb-1">
-                Como usar:
-              </p>
+              <p className="text-xs font-medium text-info mb-1">Como usar:</p>
               <p className="text-xs text-info/80">
                 Diga "Jarvis" ou "Ok Jarvis" seguido do seu comando.
                 <br />

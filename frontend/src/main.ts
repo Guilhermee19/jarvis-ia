@@ -137,8 +137,7 @@ function createWindow(): void {
       sandbox: false,
     },
     // Remover frame padrão para UI customizada
-    // frame: false,
-    titleBarStyle: 'hidden',
+    frame: false,
     show: false, // Não mostrar até estar pronto
   });
   
@@ -220,6 +219,27 @@ ipcMain.handle('get-backend-url', () => {
 
 ipcMain.handle('app-version', () => {
   return app.getVersion();
+});
+
+// Window Controls
+ipcMain.on('window-minimize', () => {
+  mainWindow?.minimize();
+});
+
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+
+ipcMain.on('window-close', () => {
+  mainWindow?.close();
+});
+
+ipcMain.handle('window-is-maximized', () => {
+  return mainWindow?.isMaximized() || false;
 });
 
 // Log não tratado

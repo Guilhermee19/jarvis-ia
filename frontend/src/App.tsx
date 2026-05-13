@@ -5,6 +5,7 @@
 import { useEffect } from "react";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Dashboard from "./components/Dashboard";
+import TitleBar from "./components/TitleBar";
 import { useWebSocket } from "./hooks";
 import { useAppStore } from "./store/appStore";
 
@@ -36,9 +37,17 @@ function App() {
   const { isConnected } = useWebSocket(backendUrl);
 
   return (
-    <DashboardLayout isConnected={isConnected}>
-      <Dashboard />
-    </DashboardLayout>
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Custom Title Bar - apenas quando estiver no Electron */}
+      {window.electronAPI && <TitleBar />}
+
+      {/* Main App */}
+      <div className="flex-1 overflow-auto">
+        <DashboardLayout isConnected={isConnected}>
+          <Dashboard />
+        </DashboardLayout>
+      </div>
+    </div>
   );
 }
 

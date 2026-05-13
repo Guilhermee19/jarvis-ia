@@ -6,6 +6,12 @@
 interface ElectronAPI {
   getBackendUrl: () => Promise<string>;
   getAppVersion: () => Promise<string>;
+  window: {
+    minimize: () => void;
+    maximize: () => void;
+    close: () => void;
+    isMaximized: () => Promise<boolean>;
+  };
   platform: NodeJS.Platform;
   isDev: boolean;
 }
