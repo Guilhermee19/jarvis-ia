@@ -2,7 +2,7 @@
  * MicrophoneButton Component
  * Botão de controle de microfone com feedback visual
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useMicrophone } from "../hooks";
 import websocketService from "../services/websocket";
@@ -20,16 +20,38 @@ export default function MicrophoneButton({
     isRecording,
     audioLevel,
     audioBlob,
-    error,
+    error: micError,
     startRecording,
     stopRecording,
     clearAudio,
   } = useMicrophone();
+  
+  const [networkError, setNetworkError] = useState<string | null>(null);
+
+  // Ouvir erros do WebSocket
+  useEffect(() => {
+    const handleAudioError = (data: any) => {
+      console.error('📢 Audio error from backend:', data.error);
+      setNetworkError(data.error);
+      
+      // Limpar erro após 5 segundos
+      setTimeout(() => setNetworkError(null), 5000);
+    };
+
+    websocketService.on('audio:error', handleAudioError);
+
+    return () => {
+      websocketService.off('audio:error', handleAudioError);
+    };
+  }, []);
 
   // Enviar áudio ao backend quando disponível
   useEffect(() => {
     if (audioBlob) {
-      console.log("🎤 Audio recorded, size:", audioBlob.size);
+      console.log("🎤 Audio recorded, size:", audioBlob.size, "bytes");
+      
+      // Limpar erro de rede anterior
+      setNetworkError(null);
 
       // Converter blob para base64 para enviar via WebSocket
       const reader = new FileReader();
@@ -38,6 +60,9 @@ export default function MicrophoneButton({
         // Remover prefixo data:audio/...;base64,
         const audioData = base64Audio.split(",")[1];
         websocketService.sendAudio(audioData);
+      };
+      reader.onerror = () => {
+        setNetworkError('Erro ao processar áudio');
       };
       reader.readAsDataURL(audioBlob);
 
@@ -50,6 +75,8 @@ export default function MicrophoneButton({
     if (isRecording) {
       stopRecording();
     } else {
+      // Limpar erros antes de começar
+      setNetworkError(null);
       startRecording();
     }
   };
@@ -61,20 +88,22 @@ export default function MicrophoneButton({
     if (audioLevel < 80) return "bg-orange-500";
     return "bg-red-500";
   };
+  
+  const displayError = micError || networkError;
 
   return (
     <div className={`relative ${className}`}>
       {/* Botão do microfone */}
       <motion.button
         onClick={handleToggle}
-        disabled={!!error}
+        disabled={!!micError}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
           isRecording
             ? "bg-error hover:bg-error/90"
             : "bg-primary hover:bg-primary/90"
-        } ${error ? "opacity-50 cursor-not-allowed" : ""}`}
+        } ${micError ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         {isRecording ? (
           // Ícone de Stop (quadrado)
@@ -145,10 +174,23 @@ export default function MicrophoneButton({
       )}
 
       {/* Mensagem de erro */}
-      {error && (
-        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-48 bg-error/20 border border-error text-white text-xs px-3 py-2 rounded-lg text-center">
-          {error}
-        </div>
+      {displayError && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-64 bg-error/20 border border-error text-white text-xs px-4 py-3 rounded-lg shadow-lg z-50"
+        >
+          <div className="flex items-start gap-2">
+            <span className="text-error text-lg">⚠️</span>
+            <div className="flex-1">
+              <p className="font-semibold mb-1">
+                {networkError ? 'Erro de Rede' : 'Erro no Microfone'}
+              </p>
+              <p className="text-xs opacity-90">{displayError}</p>
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   );

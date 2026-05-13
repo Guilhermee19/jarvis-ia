@@ -212,9 +212,34 @@ class WebSocketService {
    * Enviar áudio gravado para processamento
    */
   sendAudio(audioBase64: string): void {
-    if (!this.socket) return;
-    console.log('🎤 Sending audio for transcription');
-    this.socket.emit('audio_data', { audio: audioBase64 });
+    if (!this.socket) {
+      console.error('❌ WebSocket not connected');
+      this.emit('audio:error', { error: 'Not connected' });
+      return;
+    }
+
+    // Validar tamanho do áudio (max ~750KB em base64)
+    const sizeInBytes = (audioBase64.length * 3) / 4;
+    const sizeInKB = Math.round(sizeInBytes / 1024);
+    
+    console.log('🎤 Sending audio for transcription, size:', sizeInKB, 'KB');
+    
+    if (sizeInBytes > 800 * 1024) { // 800KB limit
+      console.error('❌ Audio too large:', sizeInKB, 'KB');
+      this.emit('audio:error', { 
+        error: 'Áudio muito grande. Tente gravar uma mensagem mais curta (max 5 segundos).' 
+      });
+      return;
+    }
+
+    try {
+      this.socket.emit('audio_data', { audio: audioBase64 });
+    } catch (error) {
+      console.error('❌ Error sending audio:', error);
+      this.emit('audio:error', { 
+        error: error instanceof Error ? error.message : 'Erro ao enviar áudio' 
+      });
+    }
   }
 
   /**

@@ -8,10 +8,15 @@ export function useMicrophone() {
   const [isRecording, setIsRecording] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Iniciar gravação de áudio
   const startRecording = useCallback(async (
@@ -19,6 +24,7 @@ export function useMicrophone() {
   ) => {
     try {
       setError(null);
+      setAudioBlob(null);
       console.log('🎤 Requesting microphone access...');
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -26,15 +32,40 @@ export function useMicrophone() {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          sampleRate: 16000, // Reduzir taxa de amostragem para menor tamanho
         },
       });
 
       streamRef.current = stream;
       audioChunksRef.current = [];
 
-      // Criar MediaRecorder com limite de tamanho
+      // Criar AudioContext para monitorar nível de áudio
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      
+      analyser.fftSize = 256;
+      microphone.connect(analyser);
+      
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+
+      // Monitorar nível de áudio
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const updateAudioLevel = () => {
+        if (analyserRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setAudioLevel(Math.min(100, (average / 255) * 100));
+          animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+        }
+      };
+      updateAudioLevel();
+
+      // Criar MediaRecorder com bitrate reduzido
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 16000, // Reduzir bitrate
       });
 
       mediaRecorderRef.current = mediaRecorder;
@@ -43,23 +74,34 @@ export function useMicrophone() {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          console.log('📦 Audio chunk received:', event.data.size, 'bytes');
         }
       };
 
       // Handler quando a gravação para
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
-        if (onDataAvailable && audioBlob.size > 0) {
-          onDataAvailable(audioBlob);
+        console.log('🛑 Recording stopped, audio blob size:', blob.size, 'bytes');
+        
+        // Verificar se blob não é muito grande (max 1MB)
+        if (blob.size > 1024 * 1024) {
+          console.warn('⚠️ Audio too large, truncating...');
+          setError('Gravação muito longa, tente novamente com áudio mais curto');
+          setAudioBlob(null);
+        } else {
+          setAudioBlob(blob);
+          
+          if (onDataAvailable && blob.size > 0) {
+            onDataAvailable(blob);
+          }
         }
         
         audioChunksRef.current = [];
-        console.log('🛑 Recording stopped, audio blob size:', audioBlob.size);
       };
 
-      // Iniciar gravação com chunks de 1 segundo (limita tamanho)
-      mediaRecorder.start(1000);
+      // Iniciar gravação com chunks pequenos de 500ms
+      mediaRecorder.start(500);
       setIsRecording(true);
       console.log('✅ Recording started');
     } catch (err) {
@@ -74,6 +116,19 @@ export function useMicrophone() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      setAudioLevel(0);
+      
+      // Parar animação de nível de áudio
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      
+      // Fechar AudioContext
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
       
       // Parar todas as tracks
       if (streamRef.current) {
@@ -82,6 +137,12 @@ export function useMicrophone() {
       }
     }
   }, [isRecording]);
+
+  // Limpar áudio gravado
+  const clearAudio = useCallback(() => {
+    setAudioBlob(null);
+    audioChunksRef.current = [];
+  }, []);
 
   // Modo "push-to-talk" - gravar enquanto pressionado
   const startPushToTalk = useCallback(async (
@@ -169,8 +230,11 @@ export function useMicrophone() {
     isRecording,
     isListening,
     error,
+    audioBlob,
+    audioLevel,
     startRecording,
     stopRecording,
+    clearAudio,
     startPushToTalk,
     startListening,
     stopListening,
