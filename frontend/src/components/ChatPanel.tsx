@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, Button, Input, Avatar, LoadingSpinner } from "./ui";
 import { useChat } from "../hooks";
 import MicrophoneButton from "./MicrophoneButton";
+import VoiceActivation from "./VoiceActivation";
 import websocketService from "../services/websocket";
 
 export default function ChatPanel() {
@@ -69,6 +70,13 @@ export default function ChatPanel() {
   const handleTranscript = (text: string) => {
     // Quando receber transcrição do áudio, adicionar ao input
     setInputText(text);
+  };
+
+  const handleVoiceCommand = (command: string) => {
+    // Processar comando de voz automaticamente
+    console.log('🎙️ Comando de voz recebido:', command);
+    setIsLoading(true);
+    sendMessage(command);
   };
 
   return (
@@ -141,6 +149,11 @@ export default function ChatPanel() {
 
       {/* Input Area */}
       <div className="px-6 py-4 border-t border-gray-800">
+        {/* Voice Activation - Escuta Contínua */}
+        <div className="mb-4">
+          <VoiceActivation onCommand={handleVoiceCommand} />
+        </div>
+
         <div className="flex gap-2">
           <Input
             value={inputText}
