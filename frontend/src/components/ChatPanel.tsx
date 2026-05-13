@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, Button, Input, Avatar, LoadingSpinner } from "./ui";
 import { useChat } from "../hooks";
 import MicrophoneButton from "./MicrophoneButton";
+import websocketService from "../services/websocket";
 
 export default function ChatPanel() {
   const { messages, sendMessage } = useChat();
@@ -23,6 +24,31 @@ export default function ChatPanel() {
     scrollToBottom();
   }, [messages]);
 
+  // Escutar respostas do Jarvis via WebSocket
+  useEffect(() => {
+    const handleChatResponse = (data: any) => {
+      console.log("📨 Resposta do Jarvis recebida:", data);
+      // A resposta já é adicionada automaticamente pelo hook useChat
+      setIsLoading(false);
+    };
+
+    const handleTranscription = (data: any) => {
+      console.log("📝 Transcrição recebida:", data.text);
+      // Adicionar transcrição ao input
+      setInputText(data.text);
+    };
+
+    // Registrar listeners
+    websocketService.on("chat:response", handleChatResponse);
+    websocketService.on("audio:transcription", handleTranscription);
+
+    // Cleanup
+    return () => {
+      websocketService.off("chat:response", handleChatResponse);
+      websocketService.off("audio:transcription", handleTranscription);
+    };
+  }, []);
+
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
 
@@ -30,10 +56,7 @@ export default function ChatPanel() {
     sendMessage(inputText);
     setInputText("");
 
-    // Simular delay de resposta
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    // Não precisamos mais do timeout, a resposta virá do backend
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -45,7 +68,7 @@ export default function ChatPanel() {
 
   const handleTranscript = (text: string) => {
     // Quando receber transcrição do áudio, adicionar ao input
-    setInputText((prev) => prev + (prev ? " " : "") + text);
+    setInputText(text);
   };
 
   return (

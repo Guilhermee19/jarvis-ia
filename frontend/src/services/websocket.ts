@@ -63,6 +63,62 @@ class WebSocketService {
           this.reconnectAttempts = 0;
         });
 
+        // Event: Chat Response (resposta do Jarvis)
+        this.socket.on('chat:response', (data) => {
+          console.log('💬 Resposta do Jarvis:', data);
+          this.emit('chat:response', data);
+        });
+
+        // Event: Audio Transcription (transcrição do áudio)
+        this.socket.on('audio:transcription', (data) => {
+          console.log('📝 Transcrição:', data.text);
+          this.emit('audio:transcription', data);
+        });
+
+        // Event: Audio Response (áudio de resposta do Jarvis)
+        this.socket.on('audio:response', (data) => {
+          console.log('🔊 Áudio recebido do Jarvis');
+          this.emit('audio:response', data);
+          
+          // Reproduzir áudio automaticamente
+          if (data.audio) {
+            try {
+              const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+              audio.play().catch(err => console.error('Erro ao reproduzir áudio:', err));
+            } catch (err) {
+              console.error('Erro ao criar áudio:', err);
+            }
+          }
+        });
+
+        // Event: Vision Analysis (análise visual)
+        this.socket.on('vision:analysis', (data) => {
+          console.log('👁️ Análise visual:', data);
+          this.emit('vision:analysis', data);
+        });
+
+        // Event: Camera Frame Received
+        this.socket.on('camera:frame_received', (data) => {
+          console.log('📸 Frame recebido pelo backend');
+          this.emit('camera:frame_received', data);
+        });
+
+        // Event: Errors
+        this.socket.on('chat:error', (data) => {
+          console.error('❌ Erro no chat:', data.error);
+          this.emit('chat:error', data);
+        });
+
+        this.socket.on('audio:error', (data) => {
+          console.error('❌ Erro no áudio:', data.error);
+          this.emit('audio:error', data);
+        });
+
+        this.socket.on('vision:error', (data) => {
+          console.error('❌ Erro na visão:', data.error);
+          this.emit('vision:error', data);
+        });
+
       } catch (error) {
         console.error('❌ Failed to create WebSocket connection:', error);
         reject(error);

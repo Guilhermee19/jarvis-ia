@@ -9,12 +9,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
 
+# Importar Jarvis WebSocket
+from core.jarvis_websocket import get_jarvis
+
 # Configurar logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Inicializar Jarvis
+jarvis = get_jarvis()
 
 # Criar instância do FastAPI
 app = FastAPI(
@@ -116,20 +122,126 @@ async def chat_message(sid, data):
     Handler para mensagens de chat
     data: { text: str, timestamp: int }
     """
-    logger.info(f"Mensagem recebida de {sid}: {data.get('text', '')[:50]}...")
-    
-    # TODO: Integrar com Jarvis/IA aqui
-    # Por enquanto, resposta mock
-    response = {
-        'id': str(uuid.uuid4()),
-        'sender': 'ai',
-        'text': f"Recebi sua mensagem: {data.get('text', '')}",
-        'timestamp': data.get('timestamp', 0),
-        'metadata': {'model': 'llama3'}
-    }
-    
-    await sio.emit('chat:message', response, room=sid)
-    return {'status': 'received'}
+    try:
+        text = data.get('text', '')
+        logger.info(f"💬 Chat de {sid}: {text[:50]}...")
+        
+        # Processar com Jarvis
+        response = await jarvis.process_text_message(text)
+        
+        # Enviar resposta
+        await sio.emit('chat:response', response, room=sid)
+        
+        # Executar ações se houver
+        if response.get('actions'):
+            logger.info(f"🤖 Executando {len(response['actions'])} ações")
+            # TODO: Executar ações no sistema
+            for action in response['actions']:
+                logger.info(f"  - {action}")
+        
+        # Se tem áudio, enviar separadamente
+        if response.get('audio'):
+            await sio.emit('audio:response', {'audio': response['audio']}, room=sid)
+        
+        return {'status': 'processed'}
+        
+    except Exception as e:
+        logger.error(f"❌ Erro no chat: {e}")
+        await sio.emit('chat:error', {'error': str(e)}, room=sid)
+        return {'status': 'error', 'message': str(e)}
+
+
+@sio.event
+async def audio_data(sid, data):
+    """
+    Handler para áudio do microfone
+    data: { audio: str (base64) }
+    """
+    try:
+        audio_base64 = data.get('audio', '')
+        logger.info(f"🎤 Áudio recebido de {sid}, tamanho: {len(audio_base64)}")
+        
+        # Processar com Jarvis
+        response = await jarvis.process_audio_data(audio_base64, sid)
+        
+        # Enviar transcrição primeiro
+        if response.get('transcription'):
+            await sio.emit('audio:transcription', {
+                'text': response['transcription']
+            }, room=sid)
+            logger.info(f"📝 Transcrição enviada: {response['transcription']}")
+        
+        # Enviar resposta do Jarvis
+        await sio.emit('chat:response', response, room=sid)
+        
+        # Executar ações se houver
+        if response.get('actions'):
+            logger.info(f"🤖 Executando {len(response['actions'])} ações")
+            for action in response['actions']:
+                logger.info(f"  - {action}")
+        
+        # Se tem áudio de resposta, enviar
+        if response.get('audio'):
+            await sio.emit('audio:response', {'audio': response['audio']}, room=sid)
+            logger.info("🔊 Áudio de resposta enviado")
+        
+        return {'status': 'processed'}
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao processar áudio: {e}", exc_info=True)
+        await sio.emit('audio:error', {'error': str(e)}, room=sid)
+        return {'status': 'error', 'message': str(e)}
+
+
+@sio.event
+async def camera_frame(sid, data):
+    """
+    Handler para frames da webcam
+    data: { frame: str (base64) }
+    """
+    try:
+        frame_base64 = data.get('frame', '')
+        logger.info(f"📸 Frame recebido de {sid}, tamanho: {len(frame_base64)}")
+        
+        # Armazenar frame para uso posterior
+        jarvis.store_camera_frame(sid, frame_base64)
+        
+        await sio.emit('camera:frame_received', {'status': 'stored'}, room=sid)
+        return {'status': 'stored'}
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao processar frame: {e}")
+        return {'status': 'error', 'message': str(e)}
+
+
+@sio.event
+async def analyze_image(sid, data):
+    """
+    Handler para análise visual de imagem
+    data: { frame: str (base64) }
+    """
+    try:
+        frame_base64 = data.get('frame', '')
+        logger.info(f"🔍 Análise de imagem solicitada por {sid}")
+        
+        # Processar com pergunta padrão de análise visual
+        question = "O que você está vendo nesta imagem? Descreva detalhadamente."
+        response = await jarvis.process_text_message(question, frame_base64)
+        
+        # Enviar resultado da análise
+        await sio.emit('vision:analysis', response, room=sid)
+        logger.info(f"👁️ Análise enviada: {response['text'][:100]}...")
+        
+        # Se tem áudio, enviar
+        if response.get('audio'):
+            await sio.emit('audio:response', {'audio': response['audio']}, room=sid)
+        
+        return {'status': 'analyzed'}
+        
+    except Exception as e:
+        logger.error(f"❌ Erro na análise de imagem: {e}", exc_info=True)
+        await sio.emit('vision:error', {'error': str(e)}, room=sid)
+        return {'status': 'error', 'message': str(e)}
 
 
 @sio.event

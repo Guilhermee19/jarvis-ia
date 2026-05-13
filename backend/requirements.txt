@@ -4,6 +4,7 @@
 # Reconhecimento e síntese de voz
 edge-tts==6.1.18
 SpeechRecognition==3.10.4
+pydub==0.25.1
 
 # Interface e automação
 pygame==2.6.1
