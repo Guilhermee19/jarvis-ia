@@ -25,23 +25,23 @@ export default function MicrophoneButton({
     stopRecording,
     clearAudio,
   } = useMicrophone();
-  
+
   const [networkError, setNetworkError] = useState<string | null>(null);
 
   // Ouvir erros do WebSocket
   useEffect(() => {
     const handleAudioError = (data: any) => {
-      console.error('📢 Audio error from backend:', data.error);
+      console.error("📢 Audio error from backend:", data.error);
       setNetworkError(data.error);
-      
+
       // Limpar erro após 5 segundos
       setTimeout(() => setNetworkError(null), 5000);
     };
 
-    websocketService.on('audio:error', handleAudioError);
+    websocketService.on("audio:error", handleAudioError);
 
     return () => {
-      websocketService.off('audio:error', handleAudioError);
+      websocketService.off("audio:error", handleAudioError);
     };
   }, []);
 
@@ -49,7 +49,7 @@ export default function MicrophoneButton({
   useEffect(() => {
     if (audioBlob) {
       console.log("🎤 Audio recorded, size:", audioBlob.size, "bytes");
-      
+
       // Limpar erro de rede anterior
       setNetworkError(null);
 
@@ -62,7 +62,7 @@ export default function MicrophoneButton({
         websocketService.sendAudio(audioData);
       };
       reader.onerror = () => {
-        setNetworkError('Erro ao processar áudio');
+        setNetworkError("Erro ao processar áudio");
       };
       reader.readAsDataURL(audioBlob);
 
@@ -88,7 +88,7 @@ export default function MicrophoneButton({
     if (audioLevel < 80) return "bg-orange-500";
     return "bg-red-500";
   };
-  
+
   const displayError = micError || networkError;
 
   return (
@@ -185,7 +185,7 @@ export default function MicrophoneButton({
             <span className="text-error text-lg">⚠️</span>
             <div className="flex-1">
               <p className="font-semibold mb-1">
-                {networkError ? 'Erro de Rede' : 'Erro no Microfone'}
+                {networkError ? "Erro de Rede" : "Erro no Microfone"}
               </p>
               <p className="text-xs opacity-90">{displayError}</p>
             </div>
