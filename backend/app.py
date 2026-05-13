@@ -135,9 +135,11 @@ async def chat_message(sid, data):
         # Executar ações se houver
         if response.get('actions'):
             logger.info(f"🤖 Executando {len(response['actions'])} ações")
-            # TODO: Executar ações no sistema
-            for action in response['actions']:
-                logger.info(f"  - {action}")
+            try:
+                jarvis.action_manager.execute_actions(response['actions'])
+                logger.info("✅ Ações executadas com sucesso")
+            except Exception as action_error:
+                logger.error(f"❌ Erro ao executar ações: {action_error}")
         
         # Se tem áudio, enviar separadamente
         if response.get('audio'):
@@ -177,8 +179,11 @@ async def audio_data(sid, data):
         # Executar ações se houver
         if response.get('actions'):
             logger.info(f"🤖 Executando {len(response['actions'])} ações")
-            for action in response['actions']:
-                logger.info(f"  - {action}")
+            try:
+                jarvis.action_manager.execute_actions(response['actions'])
+                logger.info("✅ Ações executadas com sucesso")
+            except Exception as action_error:
+                logger.error(f"❌ Erro ao executar ações: {action_error}")
         
         # Se tem áudio de resposta, enviar
         if response.get('audio'):

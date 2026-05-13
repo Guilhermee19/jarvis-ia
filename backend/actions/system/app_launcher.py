@@ -14,14 +14,18 @@ class OpenAppAction(BaseAction):
     def __init__(self):
         super().__init__("abrir", "Abre aplicativos e páginas web")
         
-        # Mapeamento de aplicativos conhecidos
+        # Mapeamento de aplicativos conhecidos com múltiplos caminhos possíveis
         self.app_paths = {
-            "spotify": r"C:\Users\%USERNAME%\AppData\Roaming\Spotify\Spotify.exe",
-            "notepad": "notepad.exe",
-            "calc": "calc.exe",
-            "paint": "mspaint.exe",
+            "spotify": [
+                r"C:\Users\%USERNAME%\AppData\Roaming\Spotify\Spotify.exe",
+                r"C:\Users\%USERNAME%\AppData\Local\Microsoft\WindowsApps\Spotify.exe",
+                "spotify:"  # Protocolo URI como fallback
+            ],
+            "notepad": ["notepad.exe"],
+            "calc": ["calc.exe"],
+            "paint": ["mspaint.exe"],
             # Jogos
-            "fortnite": r"C:\Program Files\Epic Games\Fortnite\FortniteGame\Binaries\Win64\FortniteClient-Win64-Shipping.exe"
+            "fortnite": [r"C:\Program Files\Epic Games\Fortnite\FortniteGame\Binaries\Win64\FortniteClient-Win64-Shipping.exe"]
         }
     
     def execute(self, alvo: str = None, param: str = None, valor: str = None) -> ActionResult:
@@ -70,16 +74,41 @@ class OpenAppAction(BaseAction):
             print(f"  ❌ Erro ao abrir: {e}")
             return ActionResult.FAILED
     
-    def _open_application(self, app_path: str) -> ActionResult:
-        """Abre um aplicativo específico"""
-        try:
-            expanded_path = os.path.expandvars(app_path)
-            subprocess.Popen(expanded_path)
-            print(f"  🚀 Aplicativo aberto: {app_path}")
-            return ActionResult.SUCCESS
-        except Exception as e:
-            print(f"  ❌ Erro ao abrir aplicativo: {e}")
-            return ActionResult.FAILED
+    def _open_application(self, app_paths) -> ActionResult:
+        """Abre um aplicativo específico, tentando múltiplos caminhos"""
+        # Se for string única, converte para lista
+        if isinstance(app_paths, str):
+            app_paths = [app_paths]
+        
+        last_error = None
+        
+        for app_path in app_paths:
+            try:
+                # Se é protocolo URI (termina com :)
+                if app_path.endswith(':'):
+                    subprocess.Popen(['start', '', app_path], shell=True)
+                    print(f"  🚀 Aplicativo aberto via URI: {app_path}")
+                    return ActionResult.SUCCESS
+                
+                # Expande variáveis de ambiente
+                expanded_path = os.path.expandvars(app_path)
+                
+                # Verifica se o arquivo existe antes de tentar abrir
+                if os.path.isfile(expanded_path):
+                    subprocess.Popen(expanded_path)
+                    print(f"  🚀 Aplicativo aberto: {expanded_path}")
+                    return ActionResult.SUCCESS
+                else:
+                    # Se não encontrou, continua tentando próximo caminho
+                    continue
+                    
+            except Exception as e:
+                last_error = e
+                continue
+        
+        # Se chegou aqui, nenhum caminho funcionou
+        print(f"  ❌ Erro ao abrir aplicativo: {last_error}")
+        return ActionResult.FAILED
     
     def _open_youtube(self, param: str = None, valor: str = None) -> ActionResult:
         """Abre YouTube ou canal específico"""
